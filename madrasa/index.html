@@ -469,6 +469,7 @@ function stuV(){
   const p=paid(s),r=d-p,l=isLate(s,c);
   return `<div class="top"><button class="back" data-act="cls" data-id="${view.id}">→ ${clsName(view.id)}</button>
     <h2 class="title">${esc(s.name)}${s.demo?`<span class="demo">مثال</span>`:""}</h2><button class="btn ghost sm" data-act="editStu">✎ تعديل</button></div>
+  <div class="row" style="margin:8px 0"><button class="btn gold" data-act="kashf">📋 كشف حساب الطالب (كل دفعاته بورقة وحدة)</button></div>
   ${status()}
   <div class="board">
     <div><div class="l">المبلغ الكلي عليه${s.fee!=null&&s.fee!==""?" (مبلغ خاص)":""}</div><div class="v">${money(d)}</div></div>
@@ -627,10 +628,10 @@ function payModal(){const c=getCls(view.id),s=c.students[view.i];const r=due(s,c
     if(a>r&&!$("#ok").dataset.f){$("#er").textContent=`المبلغ أكبر من الباقي (${fmt(r)}). اضغط مرة ثانية إذا كان صحيحًا.`;$("#ok").dataset.f=1;return}
     const cc=JSON.parse(JSON.stringify(c));const p={id:uid(),a,d,n:nextNo(),note:$("#pN").value.trim()};cc.students[view.i].pays=(cc.students[view.i].pays||[]).concat(p);
     put("classes",view.id,cc);close();stuReceipt(p.id)}}
-function stuReceipt(pid,cid,si){cid=cid||view.id;si=si==null?view.i:si;const c=getCls(cid),s=c.students[si];const ps=(s.pays||[]).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+function stuReceipt(pid,cid,si,copy){cid=cid||view.id;si=si==null?view.i:si;const c=getCls(cid),s=c.students[si];const ps=(s.pays||[]).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
   const idx=ps.findIndex(x=>x.id===pid);const p=ps[idx];if(!p)return;const after=due(s,c)-ps.slice(0,idx+1).reduce((t,x)=>t+Number(x.a),0);
   receipt({kind:"وصل قبض قسط دراسي",no:p.n,date:p.d,amount:p.a,rows:[["اسم الطالب",s.name],["الصف والشعبة",clsName(cid)],["رقم الدفعة",String(idx+1)],["المبلغ الكلي",fmt(due(s,c))+" د.ع"],["مجموع المدفوع",fmt(due(s,c)-after)+" د.ع"],["الباقي عليه",fmt(Math.max(after,0))+" د.ع"]].concat(p.note?[["ملاحظة",p.note]]:[]),
-    sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"وصل-"+p.n})}
+    sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"وصل-"+p.n+(copy?"-نسخة":""),copy})}
 function delPay(pid){ask("حذف هذه الدفعة؟ سيرجع مبلغها إلى الباقي على الطالب.","احذف الدفعة",()=>{const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[view.i];st.pays=(st.pays||[]).filter(x=>x.id!==pid);put("classes",view.id,cc)})}
 
 function personModal(id){const p=id?S.staff[id]:{kind:view.k||"t"};const k=p.kind||"t";
@@ -648,9 +649,9 @@ function salModal(m){const p=S.staff[view.id];const ps=(p.pays||[]).filter(x=>x.
   $("#ok").onclick=()=>{const a=pnum($("#sA").value);if(!a){$("#er").textContent="اكتب المبلغ";return}
     if(a>bal&&!$("#ok").dataset.f){$("#er").textContent="المبلغ أكبر من رصيد القاصة. اضغط مرة ثانية للتأكيد.";$("#ok").dataset.f=1;return}
     const x={id:uid(),a,m,d:$("#sD").value||today(),n:nextNo(),note:$("#sNo").value.trim()};const o=JSON.parse(JSON.stringify(p));o.pays=(o.pays||[]).concat(x);put("staff",view.id,o);close();salReceipt(x.id)}}
-function salReceipt(pid,sid){const p=S.staff[sid||view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;
+function salReceipt(pid,sid,copy){const p=S.staff[sid||view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;
   receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",p.job||"—"],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(x.note?[["ملاحظة",x.note]]:[]),
-    sign:["توقيع المستلم","توقيع المدير"],file:"راتب-"+x.n,lead:"استلمتُ من إدارة المدرسة مبلغ راتبي"})}
+    sign:["توقيع المستلم","توقيع المدير"],copy,file:"راتب-"+x.n+(copy?"-نسخة":""),lead:"استلمتُ من إدارة المدرسة مبلغ راتبي"})}
 function delSal(pid){ask("حذف هذا الراتب؟ سيرجع مبلغه إلى القاصة العامة.","احذف",()=>{const o=JSON.parse(JSON.stringify(S.staff[view.id]));o.pays=o.pays.filter(x=>x.id!==pid);put("staff",view.id,o)})}
 
 function expModal(id){const e=id?S.expenses[id]:{};const bal=totals().bal+(id?Number(e.a):0);
@@ -662,8 +663,8 @@ function expModal(id){const e=id?S.expenses[id]:{};const bal=totals().bal+(id?Nu
     if(!a||!w||!t){$("#er").textContent="اكتب المبلغ، ومن أخذه، وعلى ماذا صُرف";return}
     const o=Object.assign({},e,{a,d:$("#xD").value||today(),who:w,what:t});delete o.demo;if(!o.n)o.n=nextNo();const nid=id||uid();put("expenses",nid,o);close();toast("سُجّل المصروف")};
   if($("#dX"))$("#dX").onclick=()=>ask("حذف هذا المصروف؟ سيرجع مبلغه إلى القاصة.","احذف",()=>{del("expenses",id);close()})}
-function expReceipt(id){const e=S.expenses[id];
-  receipt({kind:"سند صرف",no:e.n,date:e.d,amount:e.a,rows:[["المستلم",e.who],["الغرض",e.what],["يُخصم من","القاصة العامة للمدرسة"]],sign:["توقيع المستلم","توقيع المدير"],file:"صرف-"+e.n,lead:"صُرف من القاصة العامة للمدرسة مبلغ"})}
+function expReceipt(id,copy){const e=S.expenses[id];
+  receipt({kind:"سند صرف",no:e.n,date:e.d,amount:e.a,rows:[["المستلم",e.who],["الغرض",e.what],["يُخصم من","القاصة العامة للمدرسة"]],sign:["توقيع المستلم","توقيع المدير"],copy,file:"صرف-"+e.n+(copy?"-نسخة":""),lead:"صُرف من القاصة العامة للمدرسة مبلغ"})}
 
 /* ---------- receipt image ---------- */
 function wrapLines(ctx,text,max){const w=String(text).split(/\s+/);const L=[];let cur="";w.forEach(x=>{const t=cur?cur+" "+x:x;if(ctx.measureText(t).width>max&&cur){L.push(cur);cur=x}else cur=t});if(cur)L.push(cur);return L.length?L:[""]}
@@ -682,8 +683,9 @@ async function receipt(o){
   ctx.fillStyle="#fff";ctx.textAlign="center";let fs=44;ctx.font="700 44px "+FD;while(ctx.measureText(schoolName()).width>W-120&&fs>26){fs-=2;ctx.font="700 "+fs+"px "+FD}ctx.fillText(schoolName(),W/2,95);
   ctx.font="500 22px "+F;ctx.fillStyle="#d6e9df";ctx.fillText(cfg().addr||("السنة الدراسية "+yearLabel()),W/2,135);
   ctx.fillStyle="#f3c64c";ctx.fillRect(W/2-170,175,340,58);ctx.fillStyle="#3b2b00";ctx.font="700 30px "+FD;ctx.fillText(o.kind,W/2,215);
-  ctx.textAlign="right";ctx.fillStyle="#18302a";ctx.font="600 24px "+F;ctx.fillText("رقم الوصل: "+(o.no||"-"),W-70,280);
+  ctx.textAlign="right";ctx.fillStyle="#18302a";ctx.font="600 24px "+F;if(o.no!=="—")ctx.fillText("رقم الوصل: "+(o.no||"-"),W-70,280);
   ctx.textAlign="left";ctx.fillText("التاريخ: "+dtext(o.date),70,280);
+  if(o.copy){ctx.save();ctx.translate(150,210);ctx.rotate(-0.12);ctx.strokeStyle="#c2413a";ctx.lineWidth=3;ctx.strokeRect(-95,-30,190,56);ctx.fillStyle="#c2413a";ctx.textAlign="center";ctx.font="700 22px "+F;ctx.fillText("نسخة مكررة",0,-2);ctx.font="500 15px "+F;ctx.fillText("أُعيد إصدارها "+dtext(today()),0,19);ctx.restore()}
   let y=320;ctx.textAlign="right";
   if(o.lead){ctx.font="500 24px "+F;ctx.fillStyle="#5d6f68";ctx.fillText(o.lead+":",W-70,y+10);y+=34}
   ctx.fillStyle="#e2f4ea";ctx.fillRect(60,y,W-120,96);ctx.strokeStyle="#1d8a55";ctx.lineWidth=2;ctx.strokeRect(60,y,W-120,96);
@@ -699,7 +701,7 @@ async function receipt(o){
   ctx.strokeStyle="#1f5240";ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(W/2,y+30,58,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle="#9db1a8";ctx.font="500 18px "+F;ctx.fillText("الختم",W/2,y+36);
   const url=cv.toDataURL("image/png");
-  modal(o.kind+" رقم "+(o.no||""),`<img class="rcpt" src="${url}" alt="${esc(o.kind)}"><div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button>`,true);
+  modal(o.kind+(o.no==="—"?"":" رقم "+(o.no||"")),`<img class="rcpt" src="${url}" alt="${esc(o.kind)}"><div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button>`,true);
   const fn=(o.file||"وصل")+".png";
   $("#sv").onclick=()=>{cv.toBlob(b=>saveBlob(b,fn),"image/png")};
   $("#sh").onclick=()=>{cv.toBlob(b=>shareBlob(b,fn,o.kind+" رقم "+(o.no||"")),"image/png")}}
@@ -721,13 +723,20 @@ function lockScreen(){const p=pinGet();if(!p)return;
   document.body.appendChild(d);const i=d.querySelector("#lk");setTimeout(()=>i.focus(),50);
   i.addEventListener("input",()=>{const v=toEn(i.value);if(v.length===4){if(v===p)d.remove();else{d.querySelector("#lkE").textContent="الرمز غير صحيح";i.value=""}}})}
 
+function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=(s.pays||[]).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);const d=due(s,c),p=paid(s);
+  const rows=[["اسم الطالب",s.name],["الصف والشعبة",clsName(view.id)],["المبلغ الكلي",fmt(d)+" د.ع"]];
+  ps.forEach((x,i)=>rows.push(["الدفعة "+(i+1),fmt(x.a)+" د.ع — "+dtext(x.d)+" — وصل رقم "+(x.n||"-")]));
+  if(!ps.length)rows.push(["الدفعات","لم يسدّد أي دفعة بعد"]);
+  rows.push(["مجموع المدفوع",fmt(p)+" د.ع"],["الباقي عليه",fmt(Math.max(d-p,0))+" د.ع"]);
+  receipt({kind:"كشف حساب طالب",no:"—",date:today(),amount:p,rows,lead:"مجموع ما دفعه الطالب حتى اليوم",sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"كشف-"+s.name})}
+
 /* ---------- receipts archive ---------- */
 function allReceipts(){const r=[];
   classIds().forEach(cid=>(getCls(cid).students||[]).forEach((st,si)=>(st.pays||[]).forEach(p=>r.push({t:"st",n:p.n,d:p.d,a:+p.a,name:st.name,sub:"قسط · "+clsName(cid),cid,si,pid:p.id}))));
   Object.entries(S.staff).forEach(([sid,p])=>(p.pays||[]).forEach(x=>r.push({t:"sal",n:x.n,d:x.d,a:+x.a,name:p.name,sub:"راتب "+mlabel(x.m),sid,pid:x.id})));
   Object.entries(S.expenses).forEach(([id,e])=>r.push({t:"exp",n:e.n,d:e.d,a:+e.a,name:e.who||"",sub:"صرف · "+(e.what||""),id}));
   return r.sort((a,b)=>(b.n||0)-(a.n||0)||(b.d||"").localeCompare(a.d||""))}
-function openRc(r){if(r.t==="st")stuReceipt(r.pid,r.cid,r.si);else if(r.t==="sal")salReceipt(r.pid,r.sid);else expReceipt(r.id)}
+function openRc(r){if(r.t==="st")stuReceipt(r.pid,r.cid,r.si,1);else if(r.t==="sal")salReceipt(r.pid,r.sid,1);else expReceipt(r.id,1)}
 const RT={st:["أقساط","in"],sal:["رواتب","out"],exp:["مصاريف","out"]};
 function rcV(){const f=view.f||"",q=(view.q||"").trim();
   const all=allReceipts();const L=all.filter(r=>(!f||r.t===f)&&(!q||r.name.includes(q)||r.sub.includes(q)||String(r.n)===toEn(q)));window.__rc=L;
@@ -736,7 +745,7 @@ function rcV(){const f=view.f||"",q=(view.q||"").trim();
     <span class="rem"><div class="meta">${r.t==="st"?"قبض":"صرف"}</div><div class="${RT[r.t][1]}">${money(r.a)}</div></span></button>`).join("");
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">🗂️ الوصولات</h2></div>
   ${status()}
-  <div class="hint">كل وصل يُسجَّل هنا تلقائيًا. اضغط على أي وصل لتفتحه من جديد وتحفظه أو ترسله.</div>
+  <div class="hint">كل وصل يُسجَّل هنا تلقائيًا. إذا أضاع أحدهم وصله، ابحث عن اسمه واضغط على الوصل: يطلع من جديد مختومًا «نسخة مكررة» فتحفظه أو ترسله له.</div>
   <div class="tabs"><button class="tab ${!f?"on":""}" data-act="rcF" data-f="">الكل (${all.length})</button>${Object.entries(RT).map(([k,v])=>`<button class="tab ${f===k?"on":""}" data-act="rcF" data-f="${k}">${v[0]} (${all.filter(r=>r.t===k).length})</button>`).join("")}</div>
   <input class="search" id="q" style="width:100%" placeholder="ابحث باسم الطالب أو المدرّس أو رقم الوصل…" value="${esc(view.q||"")}">
   <div class="list">${rows||`<div class="empty">${q?"لا يوجد وصل مطابق":"لا توجد وصولات بعد. كل دفعة أو راتب أو مصروف تسجّله يطلع وصله هنا."}</div>`}</div>
@@ -808,16 +817,17 @@ document.addEventListener("click",e=>{
   if(a==="addStu")return stuModal();
   if(a==="editStu")return stuModal(view.i);
   if(a==="pay")return payModal();
-  if(a==="rc")return stuReceipt(d.pid);
+  if(a==="rc")return stuReceipt(d.pid,null,null,1);
+  if(a==="kashf")return kashf();
   if(a==="delPay")return delPay(d.pid);
   if(a==="addPerson")return personModal();
   if(a==="editPerson")return personModal(view.id);
   if(a==="paySal")return salModal(d.m);
-  if(a==="rcSal")return salReceipt(d.pid);
+  if(a==="rcSal")return salReceipt(d.pid,null,1);
   if(a==="delSal")return delSal(d.pid);
   if(a==="addExp")return expModal();
   if(a==="editExp")return expModal(d.id);
-  if(a==="rcExp")return expReceipt(d.id);
+  if(a==="rcExp")return expReceipt(d.id,1);
   if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
   if(a==="rcF"){view.f=d.f;view.all=0;return render()}
   if(a==="repCsv")return repCsv();
