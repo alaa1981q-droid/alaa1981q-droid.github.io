@@ -230,6 +230,11 @@ const esc=v=>String(v==null?"":v).replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;"
 const fmt=n=>Math.round(Number(n)||0).toLocaleString("en-US");
 const money=n=>`<span class="num">${fmt(n)}</span> د.ع`;
 const toEn=s=>String(s||"").replace(/[٠-٩]/g,d=>"٠١٢٣٤٥٦٧٨٩".indexOf(d)).replace(/[۰-۹]/g,d=>"۰۱۲۳۴۵۶۷۸۹".indexOf(d));
+const nrm=t=>toEn(String(t||"")).replace(/[\u064B-\u065F\u0670\u0640]/g,"").replace(/[أإآٱ]/g,"ا").replace(/ة/g,"ه").replace(/ى/g,"ي").replace(/ؤ/g,"و").replace(/ئ/g,"ي").replace(/\s+/g," ").trim().toLowerCase();
+/* every typed word must appear somewhere (name, father/grandfather, parent, phone); "عبد ال" joins */
+function hit(q,...f){const words=nrm(q).replace(/عبد ال/g,"عبدال").split(" ").filter(Boolean);if(!words.length)return true;
+  const hay=f.map(x=>nrm(x).replace(/عبد ال/g,"عبدال")).join(" | ");const hn=hay.replace(/\s/g,"");
+  return words.every(w=>/^\d+$/.test(w)?hn.includes(w):hay.includes(w))}
 const pnum=s=>{const v=parseInt(toEn(s).replace(/[^\d]/g,""),10);return isNaN(v)?0:v};
 const uid=()=>Date.now().toString(36)+Math.random().toString(36).slice(2,7);
 const today=()=>{const d=new Date();return d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0")+"-"+String(d.getDate()).padStart(2,"0")};
@@ -419,10 +424,10 @@ function infoCard(st,c,cid,si,link){const d=due(st,c),pd=paid(st),r=d-pd,l=isLat
   </div>`}
 function homeSearch(){const q=(view.q||"").trim();let res="";
   if(q){const L=[];const qq=toEn(q);classIds().forEach(cid=>{const c=getCls(cid);(c.students||[]).forEach((st,si)=>{
-      if(st.name.includes(q)||(st.parent||"").includes(q)||(qq.length>=4&&toEn(st.phone||"").includes(qq)))L.push({st,c,cid,si})})});
+      if(hit(q,st.name,st.parent,st.phone))L.push({st,c,cid,si})})});
     res=L.slice(0,30).map(({st,c,cid,si})=>infoCard(st,c,cid,si,1)).join("")||`<div class="empty">لا يوجد طالب بهذا الاسم</div>`;
     if(L.length>30)res+=`<div class="hint">ظهر أول ٣٠ نتيجة، اكتب الاسم أوضح.</div>`}
-  return `<div class="gs"><label for="q" class="gsl">🔍 ابحث عن طالب</label><input class="search" id="q" type="search" autocomplete="off" placeholder="اكتب اسم الطالب أو ولي الأمر أو رقم الهاتف…" value="${esc(view.q||"")}"></div>${q?`<div class="list" style="margin-bottom:8px">${res}</div>`:""}`}
+  return `<div class="gs"><label for="q" class="gsl">🔍 ابحث عن طالب</label><input class="search" id="q" type="search" autocomplete="off" placeholder="اكتب أي جزء من اسم الطالب أو اسم أبيه أو ولي الأمر أو الهاتف…" value="${esc(view.q||"")}"></div>${q?`<div class="list" style="margin-bottom:8px">${res}</div>`:""}`}
 function homeV(){
   const t=totals();
   let g="";
@@ -482,7 +487,7 @@ function gxV(c,st,list){return `<div class="top"><button class="back" data-act="
 function clsV(){
   const id=view.id,c=getCls(id),st=clsStats(id);
   const q=(view.q||"").trim();
-  const sts=(c.students||[]).map((s,i)=>({s,i})).filter(x=>!q||x.s.name.includes(q));
+  const sts=(c.students||[]).map((s,i)=>({s,i})).filter(x=>!q||hit(q,x.s.name,x.s.parent,x.s.phone));
   if(id==="gx")return gxV(c,st,list0(id,c,sts));
   const other=id.slice(0,2)+(id[2]==="a"?"b":"a");
   if(view.res){const rl=sts.map(({s,i})=>`<div class="stu" style="cursor:default"><span class="no num">${i+1}</span><span><div class="nm">${esc(s.name)}</div><div class="meta">${s.res?resBadge(s,id):"لم تُسجَّل النتيجة"}</div></span>
@@ -794,7 +799,7 @@ function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=(s.pays||
 
 function lateList(){const L=[];classIds().forEach(cid=>{const c=getCls(cid);(c.students||[]).forEach((st,si)=>{if(isLate(st,c))L.push({st,cid,si,mo:lateMonths(st),rem:due(st,c)-paid(st),lp:lastPay(st)})})});
   return L.sort((a,b)=>b.mo-a.mo||b.rem-a.rem)}
-function lateV(){const L=lateList();const q=(view.q||"").trim();const R=L.filter(x=>!q||x.st.name.includes(q));const tot=L.reduce((s,x)=>s+x.rem,0);
+function lateV(){const L=lateList();const q=(view.q||"").trim();const R=L.filter(x=>!q||hit(q,x.st.name,x.st.parent,x.st.phone));const tot=L.reduce((s,x)=>s+x.rem,0);
   const rows=R.map(x=>`<button class="stu late" data-act="lateOpen" data-c="${x.cid}" data-i="${x.si}"><span class="no" style="background:var(--badbg);color:var(--bad)"><span class="num">${x.mo}</span></span>
     <span><div class="nm">${esc(x.st.name)}</div><div class="meta">${clsName(x.cid)} · ${x.lp?"آخر تسديد "+dtext(x.lp):"لم يسدّد أي دفعة"}</div>
     ${x.st.phone||x.st.parent?`<div class="meta">ولي الأمر: ${esc(x.st.parent||"")} ${x.st.phone?`· <span class="num">${esc(x.st.phone)}</span>`:""}</div>`:""}</span>
@@ -856,7 +861,7 @@ function rollover(){const t=totals(),ms=yearMonths(),y0=+ms[0].slice(0,4),z=nySt
 function allGrads(){const L=[];Object.entries(S.archive).forEach(([k,a])=>(a.grads||[]).forEach((g,i)=>L.push(Object.assign({k,i,year:g.year||a.year||k},g))));
   return L.sort((a,b)=>String(b.year).localeCompare(String(a.year))||a.name.localeCompare(b.name,"ar"))}
 function gradDebt(g){const x=getCls("gx");const i=(x.students||[]).findIndex(s=>(g.id&&s.id===g.id)||(!g.id&&s.name===g.name));if(i<0)return null;const st=x.students[i];return{i,rem:due(st,x)-paid(st)}}
-function gradsV(){const q=(view.q||"").trim();const all=allGrads();const L=all.filter(g=>!q||g.name.includes(q)||(g.parent||"").includes(q)||toEn(g.phone||"").includes(toEn(q)));window.__gr=L;
+function gradsV(){const q=(view.q||"").trim();const all=allGrads();const L=all.filter(g=>!q||hit(q,g.name,g.parent,g.phone));window.__gr=L;
   const years=[...new Set(L.map(g=>g.year))];
   const body=years.map(y=>`<h2 class="sec">🎓 خريجو ${esc(y)} <span class="tag">${L.filter(g=>g.year===y).length} طالبًا</span></h2><div class="list">`+L.map((g,ix)=>g.year!==y?"":(()=>{const d=gradDebt(g);
     return `<button class="stu" data-act="gradOpen" data-i="${ix}"><span class="no">🎓</span><span><div class="nm">${esc(g.name)}</div>
@@ -890,7 +895,7 @@ function allReceipts(){const r=[];
 function openRc(r){if(r.t==="st")stuReceipt(r.pid,r.cid,r.si,1);else if(r.t==="sal")salReceipt(r.pid,r.sid,1);else expReceipt(r.id,1)}
 const RT={st:["أقساط","in"],sal:["رواتب","out"],exp:["مصاريف","out"]};
 function rcV(){const f=view.f||"",q=(view.q||"").trim();
-  const all=allReceipts();const L=all.filter(r=>(!f||r.t===f)&&(!q||r.name.includes(q)||r.sub.includes(q)||String(r.n)===toEn(q)));window.__rc=L;
+  const all=allReceipts();const L=all.filter(r=>(!f||r.t===f)&&(!q||String(r.n)===toEn(q).trim()||hit(q,r.name,r.sub)));window.__rc=L;
   const rows=L.slice(0,view.all?L.length:60).map((r,i)=>`<button class="stu" data-act="openRc" data-i="${i}"><span class="no num" style="font-size:12px">${r.n||"-"}</span>
     <span><div class="nm">${esc(r.name)}</div><div class="meta">${esc(r.sub)} · ${dtext(r.d)}</div></span>
     <span class="rem"><div class="meta">${r.t==="st"?"قبض":"صرف"}</div><div class="${RT[r.t][1]}">${money(r.a)}</div></span></button>`).join("");
