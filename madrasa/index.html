@@ -361,7 +361,7 @@ function render(){
   const a=$("#app");if(!a)return;
   const v=view.v;let h="";
   if(v==="home")h=homeV();else if(v==="cls")h=clsV();else if(v==="stu")h=stuV();else if(v==="staff")h=staffV();
-  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();else if(v==="rc")h=rcV();else if(v==="late")h=lateV();else if(v==="ny")h=nyV();else if(v==="rep")h=repV();
+  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();else if(v==="rc")h=rcV();else if(v==="late")h=lateV();else if(v==="ny")h=nyV();else if(v==="grads")h=gradsV();else if(v==="rep")h=repV();
   if(v!=="home"){const pv=v==="stu"?{v:"cls",id:view.id}:v==="person"?{v:"staff",k:(S.staff[view.id]||{}).kind||"t"}:{v:"home"};
     window.__pv=pv;h+=`<button class="fback" data-act="fback" aria-label="رجوع">→ رجوع</button>`}
   const sy=window.scrollY;a.innerHTML=h;
@@ -370,11 +370,11 @@ function render(){
 }
 /* phone back button: every screen and every open window is a step in the history (#name) */
 function v2h(v){switch(v.v){case"cls":return"cls-"+v.id;case"stu":return"stu-"+v.id+"-"+v.i;case"staff":return"staff-"+(v.k||"t");case"person":return"person-"+v.id;
-  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"late":return"late";case"ny":return"ny";case"rep":return"rep-"+({m:"month",y:"year"}[v.k]||"day");default:return"home"}}
+  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"late":return"late";case"ny":return"ny";case"grads":return"grads";case"rep":return"rep-"+({m:"month",y:"year"}[v.k]||"day");default:return"home"}}
 function h2v(h){h=(h||"").replace(/^#/,"").replace(/-m$/,"");const p=h.split("-");
   if(p[0]==="cls"&&p[1])return{v:"cls",id:p[1]};if(p[0]==="stu"&&p[1])return{v:"stu",id:p[1],i:+p[2]||0};
   if(p[0]==="staff")return{v:"staff",k:p[1]==="w"?"w":"t"};if(p[0]==="person"&&p[1])return{v:"person",id:p.slice(1).join("-")};
-  if(["exp","cash","set","rc","late","ny"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="month"?"m":p[1]==="year"?"y":"d"};return{v:"home"}}
+  if(["exp","cash","set","rc","late","ny","grads"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="month"?"m":p[1]==="year"?"y":"d"};return{v:"home"}}
 let pendingBack=false,afterBack=[],backT=0;
 function flushBack(){pendingBack=false;clearTimeout(backT);const q=afterBack;afterBack=[];q.forEach(f=>f())}
 function go(v){
@@ -460,6 +460,7 @@ function homeV(){
     <button class="navb" data-act="go" data-v="rc"><span class="ic">🗂️</span><span>الوصولات<small>كل الوصولات المحفوظة</small></span></button>
     <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>يومي وشهري وسنوي</small></span></button>
     <button class="navb" data-act="go" data-v="ny"><span class="ic">🎓</span><span>السنة الجديدة<small>نقل الناجحين وأرشيف السنوات</small></span></button>
+    <button class="navb" data-act="go" data-v="grads"><span class="ic">📜</span><span>أرشيف الخريجين<small>كل من تخرّج من السادس</small></span></button>
     <button class="navb" data-act="go" data-v="set"><span class="ic">⚙️</span><span>الإعدادات<small>اسم المدرسة والسنة</small></span></button>
   </div>
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
@@ -825,6 +826,7 @@ function nyV(){const z=nyStats(),t=totals(),ms=yearMonths(),nxt=(+ms[0].slice(0,
     <b>من السنة ${esc(yearLabel())} إلى السنة ${nxt}</b>
     <div class="hint">قبل الانتقال احفظ نسخة احتياطية للسنة الحالية. رصيد القاصة الذي سيُدوَّر: <b>${fmt(t.bal)}</b> د.ع</div>
     <div class="row"><button class="btn ghost" data-act="backup">💾 احفظ نسخة احتياطية أولًا</button><button class="btn gold" data-act="rollover">🎓 ابدأ السنة الجديدة وانقل الطلاب</button></div></div>
+  <div class="row" style="margin-top:12px"><button class="btn ghost" data-act="go" data-v="grads">📜 أرشيف الخريجين</button></div>
   <h2 class="sec">📚 السنوات السابقة</h2>
   <div class="card" style="padding:6px 8px">${arc?`<div class="tblw"><table class="tbl"><thead><tr><th>السنة</th><th>الأقساط</th><th>الرواتب والمصاريف</th><th>الرصيد المدوَّر</th><th>الخريجون</th></tr></thead><tbody>${arc}</tbody></table></div>`:`<div class="empty">لا توجد سنوات مؤرشفة بعد</div>`}</div>`}
 function rollover(){const t=totals(),ms=yearMonths(),y0=+ms[0].slice(0,4),z=nyStats();
@@ -836,7 +838,7 @@ function rollover(){const t=totals(),ms=yearMonths(),y0=+ms[0].slice(0,4),z=nySt
       const h=(st.hist||[]).concat([{y:yearLabel(),cls:clsName(id),due:due(st,c),paid:paid(st),res:st.res||"",pays:st.pays||[]}]).slice(-6);
       const g=+id[1];let to=id;
       if(id==="gx"){if(rem<=0)return;}
-      else if(st.res==="p"){if(g===6){grads.push({name:st.name,parent:st.parent||"",phone:st.phone||"",rem,cls:clsName(id)});if(rem<=0)return;
+      else if(st.res==="p"){if(g===6){grads.push({id:st.id,name:st.name,parent:st.parent||"",phone:st.phone||"",rem,cls:clsName(id),year:yearLabel(),hist:h.map(x=>({y:x.y,cls:x.cls,due:x.due,paid:x.paid,res:x.res,n:(x.pays||[]).length}))});if(rem<=0)return;
         nw.gx.students.push({id:st.id,name:st.name,parent:st.parent||"",phone:st.phone||"",fee:null,prev:rem,reg:start,pays:[],grad:yearLabel(),hist:h});return}to="g"+(g+1)+id[2]}
       const n={id:st.id,name:st.name,parent:st.parent||"",phone:st.phone||"",fee:st.res==="p"?null:(st.fee==null?null:st.fee),prev:rem||0,reg:start,pays:[],hist:h};
       if(st.res!=="p"&&st.fee!=null&&st.fee!=="")n.fee=st.fee;
@@ -849,6 +851,35 @@ function rollover(){const t=totals(),ms=yearMonths(),y0=+ms[0].slice(0,4),z=nySt
     Object.keys(S.expenses).forEach(k=>del("expenses",k));
     const c=Object.assign({},cfg(),{y0:y0+1,start,carry:t.bal,year:(y0+1)+" – "+(y0+2)});put("cfg","main",c);
     go({v:"home"});toast("بدأت السنة الجديدة "+(y0+1)+" – "+(y0+2))})}
+
+/* ---------- graduates archive ---------- */
+function allGrads(){const L=[];Object.entries(S.archive).forEach(([k,a])=>(a.grads||[]).forEach((g,i)=>L.push(Object.assign({k,i,year:g.year||a.year||k},g))));
+  return L.sort((a,b)=>String(b.year).localeCompare(String(a.year))||a.name.localeCompare(b.name,"ar"))}
+function gradDebt(g){const x=getCls("gx");const i=(x.students||[]).findIndex(s=>(g.id&&s.id===g.id)||(!g.id&&s.name===g.name));if(i<0)return null;const st=x.students[i];return{i,rem:due(st,x)-paid(st)}}
+function gradsV(){const q=(view.q||"").trim();const all=allGrads();const L=all.filter(g=>!q||g.name.includes(q)||(g.parent||"").includes(q)||toEn(g.phone||"").includes(toEn(q)));window.__gr=L;
+  const years=[...new Set(L.map(g=>g.year))];
+  const body=years.map(y=>`<h2 class="sec">🎓 خريجو ${esc(y)} <span class="tag">${L.filter(g=>g.year===y).length} طالبًا</span></h2><div class="list">`+L.map((g,ix)=>g.year!==y?"":(()=>{const d=gradDebt(g);
+    return `<button class="stu" data-act="gradOpen" data-i="${ix}"><span class="no">🎓</span><span><div class="nm">${esc(g.name)}</div>
+      <div class="meta">${esc(g.cls||"الصف السادس")}${g.parent?" · ولي الأمر: "+esc(g.parent):""}</div>${g.phone?`<div class="meta">📞 <span class="num">${esc(g.phone)}</span></div>`:""}</span>
+      <span class="rem">${d&&d.rem>0?`<div class="meta">عليه دَين</div><div class="out">${money(d.rem)}</div>`:`<span class="pill g">✔ لا دَين عليه</span>`}</span></button>`})()).join("")+`</div>`).join("");
+  return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">📜 أرشيف الخريجين</h2></div>
+  ${status()}
+  <div class="board"><div><div class="l">كل الخريجين</div><div class="v ch"><span class="num">${all.length}</span></div></div><div><div class="l">عدد سنوات التخرّج</div><div class="v"><span class="num">${new Set(all.map(g=>g.year)).size}</span></div></div></div>
+  <div class="hint" style="margin-top:8px">كل طالب ينجح من السادس يُحذف من الصفوف في بداية السنة الجديدة ويُحفظ هنا باسمه وولي أمره ورقمه وسنوات دراسته. من بقي عليه دَين تجده أيضًا في «الخريجون — ديون سابقة».</div>
+  <div class="row" style="margin-top:10px"><input class="search" id="q" placeholder="ابحث باسم الخريج أو ولي الأمر أو الهاتف…" value="${esc(view.q||"")}"></div>
+  ${body||`<div class="empty">${q?"لا يوجد اسم مطابق":"لا يوجد خريجون بعد. يُضاف خريجو السادس هنا تلقائيًا عند «🎓 الانتقال إلى السنة الجديدة»."}</div>`}`}
+function gradOpen(g){const d=gradDebt(g);const h=g.hist||[];const tp=h.reduce((s,x)=>s+Number(x.paid||0),0);
+  const rows=h.map(x=>`<tr><td><b>${esc(x.y)}</b></td><td>${esc(x.cls)}</td><td>${money(x.due)}</td><td class="in">${money(x.paid)}</td><td>${x.res==="p"?"✅ ناجح":x.res==="f"?"❌ راسب":"—"}</td></tr>`).join("");
+  modal("🎓 "+g.name,`<div class="icard" style="margin-top:0"><div class="igrid">
+      <div class="if"><div class="ik">🎓 سنة التخرّج</div><div class="iv">${esc(g.year)}</div></div>
+      <div class="if"><div class="ik">🏫 آخر صف</div><div class="iv">${esc(g.cls||"السادس")}</div></div>
+      <div class="if"><div class="ik">👤 ولي الأمر</div><div class="iv">${esc(g.parent||"—")}</div></div>
+      <div class="if"><div class="ik">📞 الهاتف</div><div class="iv">${g.phone?`<span class="num">${esc(g.phone)}</span>`:"—"}</div></div>
+      <div class="if g"><div class="ik">✅ مجموع ما دفعه في المدرسة</div><div class="iv">${money(tp)}</div></div>
+      <div class="if ${d&&d.rem>0?"r":"g"}"><div class="ik">${d&&d.rem>0?"🔴 الدَّين الباقي عليه":"✔ الدَّين"}</div><div class="iv">${d&&d.rem>0?money(d.rem):"لا يوجد"}</div></div></div></div>
+    ${rows?`<b>سنوات دراسته في المدرسة</b><div class="tblw"><table class="tbl"><thead><tr><th>السنة</th><th>الصف</th><th>المطلوب</th><th>دفع</th><th>النتيجة</th></tr></thead><tbody>${rows}</tbody></table></div>`:""}`,
+    d&&d.rem>0?`<button class="btn gold" id="gpay" type="button">💵 سجّل دفعة من دَينه</button>`:"",true);
+  if(d&&d.rem>0)$("#gpay").onclick=()=>{close();go({v:"stu",id:"gx",i:d.i})}}
 
 /* ---------- receipts archive ---------- */
 function allReceipts(){const r=[];
@@ -974,6 +1005,7 @@ document.addEventListener("click",e=>{
   if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
   if(a==="rcF"){view.f=d.f;view.all=0;return render()}
   if(a==="repCsv")return repCsv();
+  if(a==="gradOpen"){const g=(window.__gr||[])[+d.i];if(g)gradOpen(g);return}
   if(a==="setRes")return setRes(+d.i,d.r);
   if(a==="resMode"){view.res=1;return render()}
   if(a==="allRes"){const cc=JSON.parse(JSON.stringify(getCls(view.id)));(cc.students||[]).forEach(st=>{if(d.r)st.res=d.r;else delete st.res});view.keep=1;return put("classes",view.id,cc)}
