@@ -7,6 +7,7 @@
 <link rel="icon" href="icon-192.png">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="color-scheme" content="only light">
 <title>حسابات المدرسة الأهلية</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Arabic:wght@400;500;600;700&family=Cairo:wght@600;700;800&display=swap">
@@ -21,18 +22,7 @@
   --fd:"Cairo","IBM Plex Sans Arabic",Tahoma,sans-serif;
   --fb:"IBM Plex Sans Arabic",Tahoma,"Segoe UI",sans-serif;
 }
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
-  --bg:#0f1a17; --paper:#17251f; --ink:#e6efe9; --mute:#9db1a8; --line:#2b3d36;
-  --board:#1d5a45; --board2:#123c2e; --chalk:#f3c64c; --chalkd:#d9a92b;
-  --good:#4cc48a; --goodbg:#163a29; --bad:#f07a72; --badbg:#3e1d1b; --warn:#f0b65a; --warnbg:#3a2c14;
-  --sky1:#1c3547; --sky2:#14262f; --wall:#cdbb94; --wall2:#b3a07a; --roof:#7a3328; --glass:#e9c96a;
-  --shadow:0 3px 0 rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}}
-:root[data-theme="dark"]{
-  --bg:#0f1a17; --paper:#17251f; --ink:#e6efe9; --mute:#9db1a8; --line:#2b3d36;
-  --board:#1d5a45; --board2:#123c2e; --chalk:#f3c64c; --chalkd:#d9a92b;
-  --good:#4cc48a; --goodbg:#163a29; --bad:#f07a72; --badbg:#3e1d1b; --warn:#f0b65a; --warnbg:#3a2c14;
-  --sky1:#1c3547; --sky2:#14262f; --wall:#cdbb94; --wall2:#b3a07a; --roof:#7a3328; --glass:#e9c96a;
-  --shadow:0 3px 0 rgba(0,0,0,.35),0 8px 22px rgba(0,0,0,.25); color-scheme:dark}
+:root,:root[data-theme="dark"]{color-scheme:only light}
 *{box-sizing:border-box}
 :root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
 body{margin:0}
@@ -224,8 +214,6 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 .secb:active{transform:translateY(2px)}
 .btn.sm{border-radius:11px}
 .list{gap:12px}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]) :is(.btn.ghost,.back,.tab,.navb,button.kpi,.stu,.slot.add){--e:#0a1310}}
-:root[data-theme="dark"] :is(.btn.ghost,.back,.tab,.navb,button.kpi,.stu,.slot.add){--e:#0a1310}
 @media (prefers-reduced-motion:no-preference){.ov .mdl{animation:pop .18s ease-out}@keyframes pop{from{transform:translateY(10px);opacity:.6}}}
 </style>
 </head><body>
