@@ -988,7 +988,7 @@ document.addEventListener("click",e=>{
     const b=new Blob([data],{type:"application/json"});const fn="نسخة-المدرسة-"+today()+".json";
     if(d.share)shareBlob(b,fn,"نسخة احتياطية");else saveBlob(b,fn);return}
   if(a==="restore"){const i=document.createElement("input");i.type="file";i.accept=".json,application/json";i.onchange=()=>{const f=i.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{
-      try{const o=JSON.parse(r.result);if(!o||o.app!=="madrasa"||!o.data)throw 0;
+      try{const o=JSON.parse(r.result);if(!o||!o.data||!o.data.classes)throw 0;
         ask(`استرجاع نسخة «${esc(o.school||"")}» المحفوظة بتاريخ ${esc(o.saved||"")}؟ ستحلّ محل كل البيانات الموجودة الآن على هذا الجهاز.`,"استرجع النسخة",()=>{COLS.forEach(c=>S[c]=o.data[c]||{});localSave();go({v:"home"});toast("استُرجعت البيانات")})}
       catch(e){toast("هذا الملف ليس نسخة احتياطية من التطبيق")}};r.readAsText(f)};i.click();return}
   if(a==="pinSet")return pinModal();
