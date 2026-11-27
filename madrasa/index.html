@@ -206,7 +206,21 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 tr.void td{text-decoration:line-through;opacity:.6}
 .kpill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 6px;background:var(--warnbg);color:var(--warn)}
 #pr{display:none}
-@media print{body>*:not(#pr){display:none!important}#pr{display:block!important}#pr img{width:100%;max-width:190mm;display:block;margin:0 auto}@page{margin:10mm}}
+@media print{html.printimg body>*:not(#pr){display:none!important}html.printimg #pr{display:block!important}#pr img{width:100%;max-width:190mm;display:block;margin:0 auto}@page{margin:10mm}
+  html.printrep body{background:#fff!important;padding:0!important}
+  html.printrep #layer,html.printrep .fback,html.printrep .toast,html.printrep .top,html.printrep .tabs,html.printrep .note,html.printrep .noprint,html.printrep button,html.printrep select,html.printrep input,html.printrep .fld,html.printrep .cpill{display:none!important}
+  html.printrep .phead{display:block!important}
+  html.printrep .board{background:#fff!important;color:#000!important;border:1.5px solid #333;box-shadow:none!important;break-inside:avoid}
+  html.printrep .board .l{color:#444!important}html.printrep .board .v,html.printrep .board .v.ch{color:#000!important}
+  html.printrep .card{box-shadow:none!important;border:1px solid #999;break-inside:avoid}
+  html.printrep .tblw{overflow:visible!important}html.printrep .tbl td,html.printrep .tbl th{white-space:normal!important;color:#000!important;border-bottom:1px solid #bbb}
+  html.printrep .in,html.printrep .out{color:#000!important}
+  html.printrep h2.sec{font-size:16px;margin:12px 0 6px;break-after:avoid}
+  html.printrep .tbl button{display:inline!important;background:none!important;border:0!important;box-shadow:none!important;padding:0!important;color:#000!important;font-weight:700}
+  html.printrep h2.sec .tag{display:none}
+  html.printrep .wrap{max-width:none}}
+.phead{display:none;text-align:center;border-bottom:3px double #333;padding-bottom:8px;margin-bottom:10px}
+.phead b{display:block;font-size:22px}.phead span{font-size:14px}
 .cpill{display:inline-block;border-radius:99px;padding:3px 12px;font-weight:700;font-size:13px}.cpill.g{background:var(--goodbg);color:var(--good)}.cpill.y{background:var(--warnbg);color:var(--warn)}.cpill.r{background:var(--badbg);color:var(--bad)}
 .foot{margin-top:28px;text-align:center;font-size:12.5px;color:var(--mute)}
 /* every button is 3D: darker bottom edge + soft drop shadow + inner top highlight, presses down on tap */
@@ -909,7 +923,11 @@ async function receipt(o){
   const fn=(o.file||"وصل")+".png";
   $("#sv").onclick=()=>{cv.toBlob(b=>saveBlob(b,fn),"image/png")};
   $("#sh").onclick=()=>{cv.toBlob(b=>shareBlob(b,fn,o.kind+" رقم "+(o.no||"")),"image/png")}}
-function printImg(url){let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}d.innerHTML="";const i=new Image();i.onload=()=>{setTimeout(()=>{window.print()},60)};i.src=url;d.appendChild(i)}
+function printRep(title){let h=document.getElementById("phd");if(h)h.remove();h=document.createElement("div");h.id="phd";h.className="phead";
+  h.innerHTML=`<b>${esc(schoolName())}</b><span>${esc(title)} · طُبع في ${dtext(today())}</span>`;const a=$("#app");a.insertBefore(h,a.firstChild);
+  document.documentElement.classList.add("printrep");setTimeout(()=>window.print(),80)}
+window.addEventListener("afterprint",()=>{document.documentElement.classList.remove("printrep","printimg");const h=document.getElementById("phd");if(h)h.remove()});
+function printImg(url){document.documentElement.classList.add("printimg");let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}d.innerHTML="";const i=new Image();i.onload=()=>{setTimeout(()=>{window.print()},60)};i.src=url;d.appendChild(i)}
 function saveBlob(b,fn){const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("حُفظ في مجلد التنزيلات (Download)")}
 function shareBlob(b,fn,title){try{const f=new File([b],fn,{type:b.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title}).catch(()=>{});return}}catch(e){}saveBlob(b,fn)}
 
@@ -1059,7 +1077,7 @@ function saveFile(b,fn){
   const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("حُفظ في مجلد التنزيلات (Download)")}
 function csv(rows){return "\ufeff"+rows.map(r=>r.map(c=>{c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")).join("\r\n")}
 function repV(){const k=view.k||"d";const mv=moves();
-  const head=`<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">📊 التقارير</h2></div>${status()}
+  const head=`<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">📊 التقارير</h2><button class="btn gold" data-act="printRep">🖨️ اطبع التقرير</button></div>${status()}
   <div class="tabs"><button class="tab ${k==="d"?"on":""}" data-act="go" data-v="rep" data-k="d">📅 التقرير اليومي</button><button class="tab ${k==="m"?"on":""}" data-act="go" data-v="rep" data-k="m">📆 التقرير الشهري</button><button class="tab ${k==="y"?"on":""}" data-act="go" data-v="rep" data-k="y">🗓️ التقرير السنوي</button></div>`;
   if(k==="d"){const day=view.d||today();const L=mv.filter(m=>m.d===day).sort((a,b)=>(a.n||0)-(b.n||0));
     const upto=mv.filter(m=>m.d<=day);const bal=sumT(upto,"st")-sumT(upto,"sal")-sumT(upto,"exp");
@@ -1150,6 +1168,7 @@ document.addEventListener("click",e=>{
   if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
   if(a==="rcF"){view.f=d.f;view.all=0;return render()}
   if(a==="repCsv")return repCsv();
+  if(a==="printRep"){const k=view.k||"d";return printRep(k==="d"?"التقرير اليومي — "+dtext(view.d||today()):k==="m"?"التقرير الشهري — "+mlabel(view.mo||today().slice(0,7)):"التقرير السنوي — "+yearLabel())}
   if(a==="logout")return ask("تسجيل الخروج من هذا الجهاز؟ بيانات المدرسة تبقى محفوظة في السحابة، وتظهر من جديد عند الدخول.","سجّل الخروج",()=>{if(Object.keys(dirty).length&&!online){toast("انتظر حتى يتصل الإنترنت وتُرفع التغييرات أولًا");return}firebase.auth().signOut().then(()=>{COLS.forEach(c=>S[c]={});localSave();localStorage.removeItem(UKEY);render()})});
   if(a==="addExtra")return extraModal();
   if(a==="delExtra"){const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[view.i];st.extra=(st.extra||[]).filter(x=>x.id!==d.x);view.keep=1;return put("classes",view.id,cc)}
