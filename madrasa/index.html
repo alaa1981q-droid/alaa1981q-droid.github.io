@@ -87,6 +87,8 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 .grade .gh{background:linear-gradient(90deg,var(--board),var(--board2));color:#fff;padding:10px 14px;display:flex;justify-content:space-between;align-items:center;gap:8px}
 .grade .gh b{font-family:var(--fd);font-size:19px}
 .grade .gh span{font-size:12.5px;color:#d6e9df}
+.gbox{display:flex;justify-content:space-between;align-items:center;gap:8px;padding:9px 14px;background:var(--warnbg);border-bottom:1px solid var(--line);font-weight:700}
+.gbox b{color:var(--good);font-size:17px}
 .secs{display:grid;grid-template-columns:1fr 1fr;gap:0}
 .secb{background:none;border:0;padding:12px 14px;text-align:right;border-top:1px solid var(--line)}
 .secb+.secb{border-inline-start:1px solid var(--line)}
@@ -392,6 +394,7 @@ function homeV(){
       ${st.n?`<div class="cash">${money(st.paid)}</div><div class="m">الباقي ${money(st.rem)}</div>`:`<div class="m">اضغط لإضافة الطلاب</div>`}</button>`;
     const fee=getCls("g"+i+"a").fee;
     g+=`<div class="grade"><div class="gh"><b>الصف ${GR[i-1]}</b><span>${fee?"القسط "+money(fee):"لم يُحدَّد القسط"}</span></div>
+      <div class="gbox"><span>💰 قاصة الصف ${GR[i-1]}</span><b>${money(A.paid+B.paid)}</b></div>
       <div class="secs">${sec("g"+i+"a","أ",A)}${sec("g"+i+"b","ب",B)}</div></div>`}
   return `<header class="hero"><div class="heroIn"><div>
     <div class="eyebrow">السنة الدراسية ${esc(yearLabel())}</div>
@@ -432,8 +435,9 @@ function clsV(){
     <button class="btn ghost sm" data-act="cls" data-id="${other}">انتقل إلى شعبة ${other[2]==="b"?"ب":"أ"}</button></div>
   ${status()}
   <div class="board">
-    <div><div class="l">القسط السنوي لكل طالب</div><div class="v ch">${money(c.fee||0)}</div></div>
-    <div><div class="l">قاصة الشعبة (المقبوض)</div><div class="v">${money(st.paid)}</div></div>
+    <div><div class="l">القسط السنوي لكل طالب</div><div class="v">${money(c.fee||0)}</div></div>
+    <div><div class="l">💰 قاصة الصف ${GR[+id[1]-1]} (أ + ب)</div><div class="v ch">${money(clsStats(id.slice(0,2)+"a").paid+clsStats(id.slice(0,2)+"b").paid)}</div></div>
+    <div><div class="l">المقبوض من شعبة ${id[2]==="b"?"ب":"أ"}</div><div class="v">${money(st.paid)}</div></div>
     <div><div class="l">المطلوب من الشعبة</div><div class="v">${money(st.due)}</div></div>
     <div><div class="l">الباقي على الطلاب</div><div class="v">${money(st.rem)}</div></div>
     <div><div class="l">الطلاب / المتأخرون</div><div class="v"><span class="num">${st.n}</span> / <span class="num">${st.late}</span></div></div>
@@ -529,7 +533,7 @@ function expV(){
 
 function cashV(){
   const t=totals();
-  const cls=classIds().map(id=>{const s=clsStats(id);return s.n||s.paid?`<tr><td>${clsName(id)}</td><td class="num">${s.n}</td><td class="in">${money(s.paid)}</td><td>${money(s.rem)}</td></tr>`:""}).join("");
+  const cls=[1,2,3,4,5,6].map(g=>{const a=clsStats("g"+g+"a"),b=clsStats("g"+g+"b");return a.n+b.n||a.paid+b.paid?`<tr><td><b>الصف ${GR[g-1]}</b><div class="hint">أ: ${money(a.paid)} · ب: ${money(b.paid)}</div></td><td class="num">${a.n+b.n}</td><td class="in">${money(a.paid+b.paid)}</td><td>${money(a.rem+b.rem)}</td></tr>`:""}).join("");
   const mv=[];
   classIds().forEach(id=>(getCls(id).students||[]).forEach(st=>(st.pays||[]).forEach(p=>mv.push({d:p.d,a:+p.a,t:"قسط: "+st.name+" — "+clsName(id),in:1}))));
   Object.values(S.staff).forEach(p=>(p.pays||[]).forEach(x=>mv.push({d:x.d,a:+x.a,t:"راتب: "+p.name+" عن "+mlabel(x.m)})));
@@ -543,8 +547,8 @@ function cashV(){
     <div><div class="l">الخارج: مصاريف عامة</div><div class="v">${money(t.ex)}</div></div>
     <div><div class="l">الرصيد الحالي</div><div class="v ch">${money(t.bal)}</div></div></div>
   <div class="card" style="margin-top:12px;text-align:center"><div class="hint">رصيد القاصة العامة للمدرسة الآن</div><div style="font-family:var(--fd);font-size:clamp(30px,7vw,44px);color:${t.bal<0?"var(--bad)":"var(--good)"}"><span class="num">${fmt(t.bal)}</span></div><div class="hint">دينار عراقي</div></div>
-  <h2 class="sec">قاصات الصفوف</h2>
-  <div class="card" style="padding:6px 8px">${cls?`<div class="tblw"><table class="tbl"><thead><tr><th>الشعبة</th><th>الطلاب</th><th>المقبوض</th><th>الباقي</th></tr></thead><tbody>${cls}</tbody></table></div>`:`<div class="empty">لا توجد أقساط بعد</div>`}</div>
+  <h2 class="sec">قاصات الصفوف <span class="tag">تزيد مع كل قسط ولا تنقص بالرواتب أو المصاريف</span></h2>
+  <div class="card" style="padding:6px 8px">${cls?`<div class="tblw"><table class="tbl"><thead><tr><th>الصف</th><th>الطلاب</th><th>قاصة الصف</th><th>الباقي</th></tr></thead><tbody>${cls}</tbody></table></div>`:`<div class="empty">لا توجد أقساط بعد</div>`}</div>
   <h2 class="sec">حركة القاصة <span class="tag">الأحدث أولًا</span></h2>
   <div class="card" style="padding:6px 8px">${mv.length?`<div class="tblw"><table class="tbl"><thead><tr><th>التاريخ</th><th>البيان</th><th>داخل</th><th>خارج</th></tr></thead><tbody>
     ${lim.map(m=>`<tr><td>${dshow(m.d)}</td><td style="min-width:200px">${esc(m.t)}</td><td class="in">${m.in?money(m.a):""}</td><td class="out">${m.in?"":money(m.a)}</td></tr>`).join("")}</tbody></table></div>
