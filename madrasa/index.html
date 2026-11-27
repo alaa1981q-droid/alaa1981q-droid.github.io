@@ -62,8 +62,9 @@ button{cursor:pointer}
 .safe .big{font-family:var(--fd);font-size:clamp(28px,6vw,40px);color:var(--chalk);line-height:1.1}
 .safe .cur{font-size:14px;color:#cfe3d8}
 .safe .neg{color:#ff9d95}
+.schoolImg{width:100%;aspect-ratio:1;object-fit:cover;border-radius:18px;border:3px solid rgba(255,255,255,.85);display:block;box-shadow:0 4px 0 rgba(0,0,0,.25),0 12px 24px rgba(0,0,0,.3)}
 .schoolSvg{width:100%;height:auto;display:block;filter:drop-shadow(0 8px 14px rgba(0,0,0,.3))}
-@media (max-width:700px){.heroIn{grid-template-columns:1fr}.schoolSvg{max-width:360px;margin:0 auto}}
+@media (max-width:700px){.heroIn{grid-template-columns:1fr}.schoolSvg,.schoolImg{max-width:380px;margin:0 auto}}
 
 /* tiles */
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0 6px}
@@ -311,7 +312,7 @@ function totals(){let inc=0,dueAll=0,n=0,late=0;classIds().forEach(id=>{const s=
 function nextNo(){const c=cfg();const n=(Number(c.seq)||0)+1;put("cfg","main",Object.assign({},c,{seq:n}));return n}
 function yearMonths(){const c=cfg();const y=Number(c.y0)||new Date().getFullYear()-(new Date().getMonth()<8?1:0);const sm=Number(c.sm)||9;
   const a=[];for(let i=0;i<12;i++){const m=(sm-1+i)%12+1,yy=y+Math.floor((sm-1+i)/12);a.push(yy+"-"+String(m).padStart(2,"0"))}return a}
-const schoolName=()=>cfg().name||"المدرسة الأهلية";
+const schoolName=()=>cfg().name||"مدرسة الأوائل الابتدائية الأهلية";
 const yearLabel=()=>cfg().year||(()=>{const m=yearMonths();return m[0].slice(0,4)+" – "+m[11].slice(0,4)})();
 
 /* ---------- school picture ---------- */
@@ -396,7 +397,7 @@ function homeV(){
     <div class="eyebrow">السنة الدراسية ${esc(yearLabel())}</div>
     <h1>${esc(schoolName())}</h1>
     <div class="sub">حسابات الأقساط والرواتب والمصاريف</div>
-  </div><div>${schoolSVG()}</div></div></header>
+  </div><div><img class="schoolImg" src="school.jpg" alt="مبنى مدرسة الأوائل"></div></div></header>
   ${status()}
   <div class="kpis">
     <button class="kpi" data-act="go" data-v="cash"><div class="l">مجموع ما سدّده الطلاب</div><div class="v g">${money(t.inc)}</div></button>
@@ -555,7 +556,7 @@ function setV(){
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">الإعدادات</h2></div>
   ${status()}
   <form class="card" id="setF" style="display:grid;gap:12px">
-    <div class="fld"><label for="sName">اسم المدرسة</label><input id="sName" value="${esc(c.name||"")}" placeholder="مثال: مدرسة النور الأهلية"></div>
+    <div class="fld"><label for="sName">اسم المدرسة</label><input id="sName" value="${esc(c.name||"")}" placeholder="مدرسة الأوائل الابتدائية الأهلية"></div>
     <div class="fld"><label for="sAddr">العنوان أو الهاتف (يظهر في الوصل)</label><input id="sAddr" value="${esc(c.addr||"")}"></div>
     <div class="fld"><label for="sY0">بداية السنة الدراسية</label>
       <div class="row"><select id="sSm" class="search" style="flex:0 1 180px">${MN.map((m,i)=>`<option value="${i+1}" ${(Number(c.sm)||9)===i+1?"selected":""}>${m}</option>`).join("")}</select>
@@ -670,7 +671,7 @@ async function receipt(o){
   ctx.fillStyle="#fffdf7";ctx.fillRect(0,0,W,H);
   ctx.strokeStyle="#1f5240";ctx.lineWidth=6;ctx.strokeRect(18,18,W-36,H-36);ctx.lineWidth=1.5;ctx.strokeRect(30,30,W-60,H-60);
   ctx.fillStyle="#1f5240";ctx.fillRect(30,30,W-60,130);
-  ctx.fillStyle="#fff";ctx.textAlign="center";ctx.font="700 44px "+FD;ctx.fillText(schoolName(),W/2,95);
+  ctx.fillStyle="#fff";ctx.textAlign="center";let fs=44;ctx.font="700 44px "+FD;while(ctx.measureText(schoolName()).width>W-120&&fs>26){fs-=2;ctx.font="700 "+fs+"px "+FD}ctx.fillText(schoolName(),W/2,95);
   ctx.font="500 22px "+F;ctx.fillStyle="#d6e9df";ctx.fillText(cfg().addr||("السنة الدراسية "+yearLabel()),W/2,135);
   ctx.fillStyle="#f3c64c";ctx.fillRect(W/2-170,175,340,58);ctx.fillStyle="#3b2b00";ctx.font="700 30px "+FD;ctx.fillText(o.kind,W/2,215);
   ctx.textAlign="right";ctx.fillStyle="#18302a";ctx.font="600 24px "+F;ctx.fillText("رقم الوصل: "+(o.no||"-"),W-70,280);
