@@ -361,11 +361,11 @@ function render(){
 }
 /* phone back button: every screen and every open window is a step in the history (#name) */
 function v2h(v){switch(v.v){case"cls":return"cls-"+v.id;case"stu":return"stu-"+v.id+"-"+v.i;case"staff":return"staff-"+(v.k||"t");case"person":return"person-"+v.id;
-  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"rep":return"rep-"+(v.k||"d");default:return"home"}}
+  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"rep":return"rep-"+({m:"month",y:"year"}[v.k]||"day");default:return"home"}}
 function h2v(h){h=(h||"").replace(/^#/,"").replace(/-m$/,"");const p=h.split("-");
   if(p[0]==="cls"&&p[1])return{v:"cls",id:p[1]};if(p[0]==="stu"&&p[1])return{v:"stu",id:p[1],i:+p[2]||0};
   if(p[0]==="staff")return{v:"staff",k:p[1]==="w"?"w":"t"};if(p[0]==="person"&&p[1])return{v:"person",id:p.slice(1).join("-")};
-  if(["exp","cash","set","rc"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="y"?"y":"d"};return{v:"home"}}
+  if(["exp","cash","set","rc"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="month"?"m":p[1]==="year"?"y":"d"};return{v:"home"}}
 let pendingBack=false,afterBack=[],backT=0;
 function flushBack(){pendingBack=false;clearTimeout(backT);const q=afterBack;afterBack=[];q.forEach(f=>f())}
 function go(v){
@@ -418,7 +418,7 @@ function homeV(){
     <button class="navb" data-act="go" data-v="exp"><span class="ic">🧾</span><span>المصاريف العامة<small>المبلغ ومن أخذه ولماذا</small></span></button>
     <button class="navb" data-act="go" data-v="cash"><span class="ic">💰</span><span>القاصة العامة للمدرسة<small>الرصيد وكل الداخل والخارج</small></span></button>
     <button class="navb" data-act="go" data-v="rc"><span class="ic">🗂️</span><span>الوصولات<small>كل الوصولات المحفوظة</small></span></button>
-    <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>تقرير يومي وسنوي</small></span></button>
+    <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>يومي وشهري وسنوي</small></span></button>
     <button class="navb" data-act="go" data-v="set"><span class="ic">⚙️</span><span>الإعدادات<small>اسم المدرسة والسنة</small></span></button>
   </div>
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
@@ -764,7 +764,7 @@ function saveFile(b,fn){
 function csv(rows){return "\ufeff"+rows.map(r=>r.map(c=>{c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")).join("\r\n")}
 function repV(){const k=view.k||"d";const mv=moves();
   const head=`<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">📊 التقارير</h2></div>${status()}
-  <div class="tabs"><button class="tab ${k==="d"?"on":""}" data-act="go" data-v="rep" data-k="d">📅 التقرير اليومي</button><button class="tab ${k==="y"?"on":""}" data-act="go" data-v="rep" data-k="y">🗓️ التقرير السنوي</button></div>`;
+  <div class="tabs"><button class="tab ${k==="d"?"on":""}" data-act="go" data-v="rep" data-k="d">📅 التقرير اليومي</button><button class="tab ${k==="m"?"on":""}" data-act="go" data-v="rep" data-k="m">📆 التقرير الشهري</button><button class="tab ${k==="y"?"on":""}" data-act="go" data-v="rep" data-k="y">🗓️ التقرير السنوي</button></div>`;
   if(k==="d"){const day=view.d||today();const L=mv.filter(m=>m.d===day).sort((a,b)=>(a.n||0)-(b.n||0));
     const upto=mv.filter(m=>m.d<=day);const bal=sumT(upto,"st")-sumT(upto,"sal")-sumT(upto,"exp");
     const i=sumT(L,"st"),sl=sumT(L,"sal"),x=sumT(L,"exp");
@@ -777,6 +777,24 @@ function repV(){const k=view.k||"d";const mv=moves();
       <div><div class="l">رصيد القاصة العامة نهاية اليوم</div><div class="v">${money(bal)}</div></div></div>
     ${L.length?sec("st","الأقساط المقبوضة")+sec("sal","الرواتب")+sec("exp","المصاريف"):`<div class="empty">لا توجد حركات في هذا اليوم</div>`}
     ${L.length?`<div class="row" style="margin-top:12px"><button class="btn gold" data-act="repCsv">💾 احفظ التقرير ملف Excel</button></div>`:""}`}
+  if(k==="m"){const ym=yearMonths();const mo=view.mo||today().slice(0,7);const L=mv.filter(m=>(m.d||"").startsWith(mo));
+    const i=sumT(L,"st"),sl=sumT(L,"sal"),x=sumT(L,"exp");const upto=mv.filter(m=>(m.d||"").slice(0,7)<=mo);const bal=sumT(upto,"st")-sumT(upto,"sal")-sumT(upto,"exp");
+    const opts=[...new Set(ym.concat([mo]))].sort();
+    const dys=[...new Set(L.map(m=>m.d))].sort();
+    const drows=dys.map(d=>{const D=L.filter(m=>m.d===d);const a=sumT(D,"st"),b=sumT(D,"sal"),c=sumT(D,"exp");return `<tr><td><button class="btn ghost sm" data-act="go" data-v="rep" data-k="d" data-d="${d}">${dtext(d)}</button></td><td class="in">${money(a)}</td><td class="out">${money(b)}</td><td class="out">${money(c)}</td><td><b>${money(a-b-c)}</b></td></tr>`}).join("");
+    const gr=[1,2,3,4,5,6].map(g=>{const a=L.filter(m=>m.t==="st"&&m.g===g);return a.length?`<tr><td><b>الصف ${GR[g-1]}</b></td><td class="num">${a.length}</td><td class="in">${money(a.reduce((t,m)=>t+m.a,0))}</td></tr>`:""}).join("");
+    const sal=L.filter(m=>m.t==="sal"),exl=L.filter(m=>m.t==="exp");
+    const lst=(R,cl)=>`<div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الوصل</th><th>التاريخ</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>${R.map(m=>`<tr><td class="num">${m.n||""}</td><td>${dshow(m.d)}</td><td style="min-width:170px">${esc(m.txt)}</td><td class="${cl}">${money(m.a)}</td></tr>`).join("")}</tbody></table></div></div>`;
+    return head+`<div class="row"><div class="fld" style="flex:0 1 240px"><label for="repM">اختر الشهر</label><select id="repM">${opts.map(m=>`<option value="${m}" ${m===mo?"selected":""}>${mlabel(m)}</option>`).join("")}</select></div></div>
+    <h2 class="sec">شهر ${mlabel(mo)}</h2>
+    <div class="board"><div><div class="l">المقبوض من الأقساط</div><div class="v">${money(i)}</div></div><div><div class="l">الرواتب المدفوعة</div><div class="v">${money(sl)}</div></div>
+      <div><div class="l">المصاريف</div><div class="v">${money(x)}</div></div><div><div class="l">صافي الشهر</div><div class="v ch">${money(i-sl-x)}</div></div>
+      <div><div class="l">رصيد القاصة العامة نهاية الشهر</div><div class="v">${money(bal)}</div></div></div>
+    ${L.length?`<h2 class="sec">حسب الأيام <span class="tag">اضغط على اليوم لتفتح تقريره</span></h2><div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>اليوم</th><th>الأقساط</th><th>الرواتب</th><th>المصاريف</th><th>الصافي</th></tr></thead><tbody>${drows}</tbody></table></div></div>
+    ${gr?`<h2 class="sec">أقساط الشهر حسب الصفوف</h2><div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الصف</th><th>عدد الدفعات</th><th>المبلغ</th></tr></thead><tbody>${gr}</tbody></table></div></div>`:""}
+    ${sal.length?`<h2 class="sec">الرواتب <span class="tag">${sal.length}</span></h2>`+lst(sal,"out"):""}
+    ${exl.length?`<h2 class="sec">المصاريف <span class="tag">${exl.length}</span></h2>`+lst(exl,"out"):""}
+    <div class="row" style="margin-top:12px"><button class="btn gold" data-act="repCsv">💾 احفظ التقرير ملف Excel</button></div>`:`<div class="empty">لا توجد حركات في هذا الشهر</div>`}`}
   const ms=yearMonths();let T={i:0,s:0,x:0};
   const rows=ms.map(m=>{const L=mv.filter(z=>(z.d||"").startsWith(m));const i=sumT(L,"st"),sl=sumT(L,"sal"),x=sumT(L,"exp");T.i+=i;T.s+=sl;T.x+=x;
     return `<tr><td><b>${mlabel(m)}</b></td><td class="in">${money(i)}</td><td class="out">${money(sl)}</td><td class="out">${money(x)}</td><td><b>${money(i-sl-x)}</b></td></tr>`}).join("");
@@ -798,6 +816,11 @@ function repCsv(){const mv=moves();
     L.forEach(m=>R.push([m.n||"",m.t==="st"?"قسط":m.t==="sal"?"راتب":"مصروف",m.txt,m.t==="st"?m.a:"",m.t==="st"?"":m.a]));
     R.push([],["المجموع","","",sumT(L,"st"),sumT(L,"sal")+sumT(L,"exp")]);
     saveFile(new Blob([csv(R)],{type:"text/csv"}),"تقرير-يومي-"+day+".csv");return}
+  if(view.k==="m"){const mo=view.mo||today().slice(0,7);const L=mv.filter(m=>(m.d||"").startsWith(mo)).sort((a,b)=>(a.d||"").localeCompare(b.d||"")||(a.n||0)-(b.n||0));
+    const R=[[schoolName()],["التقرير الشهري",mlabel(mo)],[],["رقم الوصل","التاريخ","النوع","البيان","داخل","خارج"]];
+    L.forEach(m=>R.push([m.n||"",m.d,m.t==="st"?"قسط":m.t==="sal"?"راتب":"مصروف",m.txt,m.t==="st"?m.a:"",m.t==="st"?"":m.a]));
+    R.push([],["المجموع","","","",sumT(L,"st"),sumT(L,"sal")+sumT(L,"exp")],["صافي الشهر","","","",sumT(L,"st")-sumT(L,"sal")-sumT(L,"exp")]);
+    saveFile(new Blob([csv(R)],{type:"text/csv"}),"تقرير-شهري-"+mo+".csv");return}
   const R=[[schoolName()],["التقرير السنوي",yearLabel()],[],["الشهر","الأقساط","الرواتب","المصاريف","الصافي"]];
   yearMonths().forEach(m=>{const L=mv.filter(z=>(z.d||"").startsWith(m));const i=sumT(L,"st"),s=sumT(L,"sal"),x=sumT(L,"exp");R.push([mlabel(m),i,s,x,i-s-x])});
   R.push([],["الصف","الطلاب","المطلوب","المقبوض","الباقي","المتأخرون"]);
@@ -850,7 +873,7 @@ document.addEventListener("input",e=>{
   if(t.id==="q"){view.q=t.value;render();return}
   if(t.classList.contains("amt")){const v=pnum(t.value);t.value=v?fmt(v):"";const w=$("#"+t.id+"W");if(w)w.textContent=v?wordsIQD(v):""}
 });
-document.addEventListener("change",e=>{if(e.target.id==="expM"){view.m=e.target.value;render()}if(e.target.id==="repD"){view.d=e.target.value||today();view.keep=1;render()}});
+document.addEventListener("change",e=>{if(e.target.id==="expM"){view.m=e.target.value;render()}if(e.target.id==="repM"){view.mo=e.target.value;view.keep=1;render()}if(e.target.id==="repD"){view.d=e.target.value||today();view.keep=1;render()}});
 document.addEventListener("submit",e=>{if(e.target.id==="setF"){e.preventDefault();
   const o=Object.assign({},cfg(),{name:$("#sName").value.trim(),addr:$("#sAddr").value.trim(),sm:+$("#sSm").value,y0:pnum($("#sY0").value)||undefined});
   const m=yearMonths.call(null);o.start=(o.y0||m[0].slice(0,4))+"-"+String(o.sm).padStart(2,"0")+"-01";
