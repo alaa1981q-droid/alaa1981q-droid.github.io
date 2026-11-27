@@ -307,8 +307,8 @@ async function boot(){
 }
 
 /* ---------- calculations ---------- */
-const classIds=()=>{const a=[];for(let g=1;g<=6;g++)SECS.forEach((s,i)=>a.push("g"+g+(i?"b":"a")));return a};
-const clsName=id=>{const g=+id[1],s=id[2]==="b"?"ب":"أ";return `الصف ${GR[g-1]} — ${s}`};
+const classIds=()=>{const a=[];for(let g=1;g<=6;g++)SECS.forEach((s,i)=>a.push("g"+g+(i?"b":"a")));if(S.classes.gx&&(S.classes.gx.students||[]).length)a.push("gx");return a};
+const clsName=id=>{if(id==="gx")return "الخريجون — ديون سابقة";const g=+id[1],s=id[2]==="b"?"ب":"أ";return `الصف ${GR[g-1]} — ${s}`};
 const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const due=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
 const paid=st=>(st.pays||[]).reduce((s,p)=>s+Number(p.a||0),0);
@@ -464,12 +464,25 @@ function homeV(){
   </div>
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
   <div class="grades">${g}</div>
+  ${S.classes.gx&&(S.classes.gx.students||[]).length?(()=>{const x=clsStats("gx");return `<button class="navb" style="width:100%;margin-top:12px" data-act="cls" data-id="gx"><span class="ic">🎓</span><span>الخريجون — ديون سابقة<small>${x.n} خرّيجًا · الباقي عليهم ${fmt(x.rem)} د.ع</small></span></button>`})():""}
   <div class="foot">${esc(schoolName())} · كل وصل يُرقَّم تلقائيًا · الطالب الذي يمضي عليه ٤ أشهر بلا تسديد يُعلَّم بالأحمر</div>`}
 
+function list0(id,c,sts){return sts.map(({s,i})=>{const d=due(s,c),p=paid(s),r=d-p,l=isLate(s,c);
+    return `<button class="stu ${l?"late":""}" data-act="stu" data-i="${i}"><span class="no">🎓</span><span><div class="nm">${esc(s.name)} ${l?`<span class="pill r">متأخر ${lateMonths(s)} أشهر</span>`:""}${r<=0?` <span class="pill g">سدّد دَينه</span>`:""}</div>
+      <div class="meta">تخرّج ${esc(s.grad||"")} · دَين سابق ${money(d)} · دفع ${money(p)}</div>${s.phone?`<div class="meta">📞 <span class="num">${esc(s.phone)}</span></div>`:""}</span>
+      <span class="rem"><div class="meta">الباقي</div><div class="${r>0?"out":"in"}">${money(Math.max(r,0))}</div></span></button>`}).join("")}
+function gxV(c,st,list){return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">🎓 الخريجون — ديون سابقة</h2></div>
+  ${status()}
+  <div class="board"><div><div class="l">عدد الخريجين المدينين</div><div class="v"><span class="num">${st.n}</span></div></div><div><div class="l">مجموع الديون</div><div class="v">${money(st.due)}</div></div>
+    <div><div class="l">المقبوض منها</div><div class="v">${money(st.paid)}</div></div><div><div class="l">الباقي</div><div class="v ch">${money(st.rem)}</div></div></div>
+  <div class="hint" style="margin-top:8px">طلاب السادس الناجحون خرجوا من صفوف المدرسة، والذين بقي عليهم مبلغ تبقى ديونهم هنا حتى يسدّدوها. اضغط على الاسم لتسجّل دفعة ويطلع وصلها. من يسدّد دَينه كاملًا يُحذف من هنا في بداية السنة التالية.</div>
+  <div class="row" style="margin-top:10px"><input class="search" id="q" placeholder="ابحث عن اسم…" value="${esc(view.q||"")}"></div>
+  <div class="list">${list||`<div class="empty">لا يوجد خريجون عليهم ديون</div>`}</div>`}
 function clsV(){
   const id=view.id,c=getCls(id),st=clsStats(id);
   const q=(view.q||"").trim();
   const sts=(c.students||[]).map((s,i)=>({s,i})).filter(x=>!q||x.s.name.includes(q));
+  if(id==="gx")return gxV(c,st,list0(id,c,sts));
   const other=id.slice(0,2)+(id[2]==="a"?"b":"a");
   if(view.res){const rl=sts.map(({s,i})=>`<div class="stu" style="cursor:default"><span class="no num">${i+1}</span><span><div class="nm">${esc(s.name)}</div><div class="meta">${s.res?resBadge(s,id):"لم تُسجَّل النتيجة"}</div></span>
       <span class="row" style="flex-wrap:nowrap"><button class="btn sm ${s.res==="p"?"":"ghost"}" data-act="setRes" data-i="${i}" data-r="p">✅ ناجح</button><button class="btn sm ${s.res==="f"?"red":"ghost"}" data-act="setRes" data-i="${i}" data-r="f">❌ راسب</button></span></div>`).join("");
@@ -522,9 +535,10 @@ function stuV(){
   <div class="row" style="margin:8px 0"><button class="btn gold" data-act="kashf">📋 كشف حساب الطالب (كل دفعاته بورقة وحدة)</button></div>
   ${status()}
   ${infoCard(s,c,view.id,view.i,0)}
-  <div class="card" style="margin-top:10px;display:grid;gap:8px"><b>📝 نتيجة آخر السنة</b>
+  ${view.id==="gx"?`<div class="note">🎓 خرّيج ${esc(s.grad||"")}: المبلغ المكتوب هو الدَّين الباقي عليه من المدرسة.</div>`:`<div class="card" style="margin-top:10px;display:grid;gap:8px"><b>📝 نتيجة آخر السنة</b>
     <div class="row"><button class="btn ${s.res==="p"?"":"ghost"}" data-act="setRes" data-i="${view.i}" data-r="p">✅ ناجح${view.id[1]==="6"?" (يتخرّج)":""}</button><button class="btn ${s.res==="f"?"red":"ghost"}" data-act="setRes" data-i="${view.i}" data-r="f">❌ راسب</button>${s.res?`<button class="btn ghost sm" data-act="setRes" data-i="${view.i}" data-r="">إلغاء</button>`:""}</div>
     <div class="hint">${s.res==="p"?(view.id[1]==="6"?"سيتخرّج من المدرسة عند الانتقال للسنة الجديدة.":"سينتقل إلى الصف "+GR[+view.id[1]]+" — شعبة "+(view.id[2]==="b"?"ب":"أ")+" عند الانتقال للسنة الجديدة."):s.res==="f"?"سيبقى في "+clsName(view.id)+" في السنة الجديدة.":"لم تُسجَّل النتيجة بعد."}</div></div>
+`}
   <h2 class="sec">الدفعات <span class="tag">عشر خانات للتسديد، والباقي يُحسب بعد كل دفعة</span></h2>
   <div class="slots">${slots}</div>`}
 
@@ -794,7 +808,7 @@ function lateV(){const L=lateList();const q=(view.q||"").trim();const R=L.filter
 
 /* ---------- results & new year ---------- */
 function setRes(i,r){const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[i];if(!st)return;if(r)st.res=r;else delete st.res;view.keep=1;put("classes",view.id,cc)}
-function nyStats(){let p=0,f=0,n=0,gr=0;classIds().forEach(id=>(getCls(id).students||[]).forEach(st=>{if(st.res==="p"){p++;if(id[1]==="6")gr++}else if(st.res==="f")f++;else n++}));return{p,f,n,gr}}
+function nyStats(){let p=0,f=0,n=0,gr=0;classIds().filter(id=>id!=="gx").forEach(id=>(getCls(id).students||[]).forEach(st=>{if(st.res==="p"){p++;if(id[1]==="6")gr++}else if(st.res==="f")f++;else n++}));return{p,f,n,gr}}
 function nyV(){const z=nyStats(),t=totals(),ms=yearMonths(),nxt=(+ms[0].slice(0,4)+1)+" – "+(+ms[0].slice(0,4)+2);
   const per=[1,2,3,4,5,6].map(g=>{let p=0,f=0,n=0;["a","b"].forEach(x=>(getCls("g"+g+x).students||[]).forEach(st=>st.res==="p"?p++:st.res==="f"?f++:n++));
     return `<tr><td><b>الصف ${GR[g-1]}</b></td><td class="in">${p}</td><td class="out">${f}</td><td>${n?`<b style="color:var(--warn)">${n}</b>`:0}</td><td>${g===6?"🎓 يتخرّجون":"← الصف "+GR[g]}</td></tr>`}).join("");
@@ -802,7 +816,7 @@ function nyV(){const z=nyStats(),t=totals(),ms=yearMonths(),nxt=(+ms[0].slice(0,
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">🎓 الانتقال إلى السنة الجديدة</h2></div>
   ${status()}
   <div class="card" style="display:grid;gap:6px"><b>كيف يعمل؟</b>
-    <div class="hint" style="font-size:14px">١. في نهاية السنة (أيار) سجّل نتيجة كل طالب: ادخل الشعبة واضغط «📝 نتائج آخر السنة».<br>٢. في بداية السنة الجديدة (أيلول) اضغط الزر في الأسفل: الناجح ينتقل للصف الذي بعده بنفس الشعبة (الأول أ ← الثاني أ)، وناجح السادس يتخرّج، والراسب ومن لم تُسجَّل نتيجته يبقى في صفه.<br>٣. أي مبلغ بقي على الطالب يُنقل معه «دَينًا من السنة الماضية»، ورصيد القاصة العامة يُدوَّر للسنة الجديدة، وحسابات السنة القديمة تُحفظ في الأرشيف أدناه.</div></div>
+    <div class="hint" style="font-size:14px">٠. ناجح السادس يُحذف من صفوف السنة القديمة، ومن بقي عليه قسط تنتقل ديونه معه إلى خانة «🎓 الخريجون — ديون سابقة» حتى يسدّدها.<br>١. في نهاية السنة (أيار) سجّل نتيجة كل طالب: ادخل الشعبة واضغط «📝 نتائج آخر السنة».<br>٢. في بداية السنة الجديدة (أيلول) اضغط الزر في الأسفل: الناجح ينتقل للصف الذي بعده بنفس الشعبة (الأول أ ← الثاني أ)، وناجح السادس يتخرّج، والراسب ومن لم تُسجَّل نتيجته يبقى في صفه.<br>٣. أي مبلغ بقي على الطالب يُنقل معه «دَينًا من السنة الماضية»، ورصيد القاصة العامة يُدوَّر للسنة الجديدة، وحسابات السنة القديمة تُحفظ في الأرشيف أدناه.</div></div>
   <div class="board" style="margin-top:12px"><div><div class="l">ناجحون</div><div class="v"><span class="num">${z.p}</span></div></div><div><div class="l">راسبون</div><div class="v"><span class="num">${z.f}</span></div></div>
     <div><div class="l">بلا نتيجة</div><div class="v ch"><span class="num">${z.n}</span></div></div><div><div class="l">يتخرّجون (السادس)</div><div class="v"><span class="num">${z.gr}</span></div></div></div>
   <div class="card" style="margin-top:12px;padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الصف</th><th>ناجح</th><th>راسب</th><th>بلا نتيجة</th><th>الناجح يذهب إلى</th></tr></thead><tbody>${per}</tbody></table></div></div>
@@ -816,19 +830,21 @@ function nyV(){const z=nyStats(),t=totals(),ms=yearMonths(),nxt=(+ms[0].slice(0,
 function rollover(){const t=totals(),ms=yearMonths(),y0=+ms[0].slice(0,4),z=nyStats();
   ask(`ستنتقل المدرسة إلى السنة الجديدة ${y0+1} – ${y0+2}:<br>• ${z.p-z.gr} ناجحًا ينتقلون للصف التالي، و${z.gr} يتخرّجون.<br>• ${z.f+z.n} يبقون في صفوفهم.<br>• الباقي على كل طالب يُنقل معه دَينًا سابقًا.<br>• رصيد القاصة (${fmt(t.bal)} د.ع) يُدوَّر، والرواتب والمصاريف تُنقل إلى الأرشيف.<br><br><b>لا يمكن التراجع، فتأكد أنك حفظت نسخة احتياطية.</b>`,"نعم، ابدأ السنة الجديدة",()=>{
     const old={};classIds().forEach(id=>old[id]=JSON.parse(JSON.stringify(getCls(id))));
-    const nw={};classIds().forEach(id=>nw[id]={fee:old[id].fee||0,students:[]});
+    const nw={};classIds().forEach(id=>nw[id]={fee:old[id].fee||0,students:[]});nw.gx={fee:0,students:[]};
     const start=(y0+1)+"-"+String(Number(cfg().sm)||9).padStart(2,"0")+"-01";const grads=[];
     classIds().forEach(id=>(old[id].students||[]).forEach(st=>{const c=old[id];const rem=Math.max(due(st,c)-paid(st),0);
       const h=(st.hist||[]).concat([{y:yearLabel(),cls:clsName(id),due:due(st,c),paid:paid(st),res:st.res||"",pays:st.pays||[]}]).slice(-6);
       const g=+id[1];let to=id;
-      if(st.res==="p"){if(g===6){grads.push({name:st.name,parent:st.parent||"",phone:st.phone||"",rem,cls:clsName(id)});return}to="g"+(g+1)+id[2]}
+      if(id==="gx"){if(rem<=0)return;}
+      else if(st.res==="p"){if(g===6){grads.push({name:st.name,parent:st.parent||"",phone:st.phone||"",rem,cls:clsName(id)});if(rem<=0)return;
+        nw.gx.students.push({id:st.id,name:st.name,parent:st.parent||"",phone:st.phone||"",fee:null,prev:rem,reg:start,pays:[],grad:yearLabel(),hist:h});return}to="g"+(g+1)+id[2]}
       const n={id:st.id,name:st.name,parent:st.parent||"",phone:st.phone||"",fee:st.res==="p"?null:(st.fee==null?null:st.fee),prev:rem||0,reg:start,pays:[],hist:h};
       if(st.res!=="p"&&st.fee!=null&&st.fee!=="")n.fee=st.fee;
       nw[to].students.push(n)}));
     let sal=0;const sp={};Object.entries(S.staff).forEach(([k,p])=>{sal+=(p.pays||[]).reduce((s,x)=>s+Number(x.a),0);sp[k]={name:p.name,pays:p.pays||[]}});
     const ex=Object.values(S.expenses);const exT=ex.reduce((s,e)=>s+Number(e.a),0);
     put("archive","y"+y0,{year:yearLabel(),inc:t.inc,sal,ex:exT,carryIn:t.carry,bal:t.bal,grads,expenses:ex,staffPays:sp,closed:today()});
-    classIds().forEach(id=>put("classes",id,nw[id]));
+    classIds().filter(id=>id!=="gx").forEach(id=>put("classes",id,nw[id]));if(nw.gx.students.length||S.classes.gx)put("classes","gx",nw.gx);
     Object.entries(S.staff).forEach(([k,p])=>{const o=JSON.parse(JSON.stringify(p));o.pays=[];put("staff",k,o)});
     Object.keys(S.expenses).forEach(k=>del("expenses",k));
     const c=Object.assign({},cfg(),{y0:y0+1,start,carry:t.bal,year:(y0+1)+" – "+(y0+2)});put("cfg","main",c);
