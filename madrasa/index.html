@@ -153,6 +153,8 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 .tbl th{font-size:12.5px;color:var(--mute);text-align:right;font-weight:700;padding:8px;border-bottom:1px solid var(--line);white-space:nowrap}
 .tbl td{padding:9px 8px;border-bottom:1px solid var(--line);vertical-align:top}
 .tblw{overflow-x:auto}
+.tbl td{white-space:nowrap}
+.tbl td[style*="min-width"]{white-space:normal}
 .in{color:var(--good);font-weight:700} .out{color:var(--bad);font-weight:700}
 
 /* months */
@@ -350,7 +352,7 @@ function render(){
   const a=$("#app");if(!a)return;
   const v=view.v;let h="";
   if(v==="home")h=homeV();else if(v==="cls")h=clsV();else if(v==="stu")h=stuV();else if(v==="staff")h=staffV();
-  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();
+  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();else if(v==="rc")h=rcV();else if(v==="rep")h=repV();
   if(v!=="home"){const pv=v==="stu"?{v:"cls",id:view.id}:v==="person"?{v:"staff",k:(S.staff[view.id]||{}).kind||"t"}:{v:"home"};
     window.__pv=pv;h+=`<button class="fback" data-act="fback" aria-label="رجوع">→ رجوع</button>`}
   const sy=window.scrollY;a.innerHTML=h;
@@ -359,11 +361,11 @@ function render(){
 }
 /* phone back button: every screen and every open window is a step in the history (#name) */
 function v2h(v){switch(v.v){case"cls":return"cls-"+v.id;case"stu":return"stu-"+v.id+"-"+v.i;case"staff":return"staff-"+(v.k||"t");case"person":return"person-"+v.id;
-  case"exp":return"exp";case"cash":return"cash";case"set":return"set";default:return"home"}}
+  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"rep":return"rep-"+(v.k||"d");default:return"home"}}
 function h2v(h){h=(h||"").replace(/^#/,"").replace(/-m$/,"");const p=h.split("-");
   if(p[0]==="cls"&&p[1])return{v:"cls",id:p[1]};if(p[0]==="stu"&&p[1])return{v:"stu",id:p[1],i:+p[2]||0};
   if(p[0]==="staff")return{v:"staff",k:p[1]==="w"?"w":"t"};if(p[0]==="person"&&p[1])return{v:"person",id:p.slice(1).join("-")};
-  if(["exp","cash","set"].includes(p[0]))return{v:p[0]};return{v:"home"}}
+  if(["exp","cash","set","rc"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="y"?"y":"d"};return{v:"home"}}
 let pendingBack=false,afterBack=[],backT=0;
 function flushBack(){pendingBack=false;clearTimeout(backT);const q=afterBack;afterBack=[];q.forEach(f=>f())}
 function go(v){
@@ -415,6 +417,8 @@ function homeV(){
     <button class="navb" data-act="go" data-v="staff" data-k="w"><span class="ic">🧹</span><span>العاملون<small>الأسماء والرواتب</small></span></button>
     <button class="navb" data-act="go" data-v="exp"><span class="ic">🧾</span><span>المصاريف العامة<small>المبلغ ومن أخذه ولماذا</small></span></button>
     <button class="navb" data-act="go" data-v="cash"><span class="ic">💰</span><span>القاصة العامة للمدرسة<small>الرصيد وكل الداخل والخارج</small></span></button>
+    <button class="navb" data-act="go" data-v="rc"><span class="ic">🗂️</span><span>الوصولات<small>كل الوصولات المحفوظة</small></span></button>
+    <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>تقرير يومي وسنوي</small></span></button>
     <button class="navb" data-act="go" data-v="set"><span class="ic">⚙️</span><span>الإعدادات<small>اسم المدرسة والسنة</small></span></button>
   </div>
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
@@ -623,9 +627,9 @@ function payModal(){const c=getCls(view.id),s=c.students[view.i];const r=due(s,c
     if(a>r&&!$("#ok").dataset.f){$("#er").textContent=`المبلغ أكبر من الباقي (${fmt(r)}). اضغط مرة ثانية إذا كان صحيحًا.`;$("#ok").dataset.f=1;return}
     const cc=JSON.parse(JSON.stringify(c));const p={id:uid(),a,d,n:nextNo(),note:$("#pN").value.trim()};cc.students[view.i].pays=(cc.students[view.i].pays||[]).concat(p);
     put("classes",view.id,cc);close();stuReceipt(p.id)}}
-function stuReceipt(pid){const c=getCls(view.id),s=c.students[view.i];const ps=(s.pays||[]).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
+function stuReceipt(pid,cid,si){cid=cid||view.id;si=si==null?view.i:si;const c=getCls(cid),s=c.students[si];const ps=(s.pays||[]).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);
   const idx=ps.findIndex(x=>x.id===pid);const p=ps[idx];if(!p)return;const after=due(s,c)-ps.slice(0,idx+1).reduce((t,x)=>t+Number(x.a),0);
-  receipt({kind:"وصل قبض قسط دراسي",no:p.n,date:p.d,amount:p.a,rows:[["اسم الطالب",s.name],["الصف والشعبة",clsName(view.id)],["رقم الدفعة",String(idx+1)],["المبلغ الكلي",fmt(due(s,c))+" د.ع"],["مجموع المدفوع",fmt(due(s,c)-after)+" د.ع"],["الباقي عليه",fmt(Math.max(after,0))+" د.ع"]].concat(p.note?[["ملاحظة",p.note]]:[]),
+  receipt({kind:"وصل قبض قسط دراسي",no:p.n,date:p.d,amount:p.a,rows:[["اسم الطالب",s.name],["الصف والشعبة",clsName(cid)],["رقم الدفعة",String(idx+1)],["المبلغ الكلي",fmt(due(s,c))+" د.ع"],["مجموع المدفوع",fmt(due(s,c)-after)+" د.ع"],["الباقي عليه",fmt(Math.max(after,0))+" د.ع"]].concat(p.note?[["ملاحظة",p.note]]:[]),
     sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"وصل-"+p.n})}
 function delPay(pid){ask("حذف هذه الدفعة؟ سيرجع مبلغها إلى الباقي على الطالب.","احذف الدفعة",()=>{const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[view.i];st.pays=(st.pays||[]).filter(x=>x.id!==pid);put("classes",view.id,cc)})}
 
@@ -644,7 +648,7 @@ function salModal(m){const p=S.staff[view.id];const ps=(p.pays||[]).filter(x=>x.
   $("#ok").onclick=()=>{const a=pnum($("#sA").value);if(!a){$("#er").textContent="اكتب المبلغ";return}
     if(a>bal&&!$("#ok").dataset.f){$("#er").textContent="المبلغ أكبر من رصيد القاصة. اضغط مرة ثانية للتأكيد.";$("#ok").dataset.f=1;return}
     const x={id:uid(),a,m,d:$("#sD").value||today(),n:nextNo(),note:$("#sNo").value.trim()};const o=JSON.parse(JSON.stringify(p));o.pays=(o.pays||[]).concat(x);put("staff",view.id,o);close();salReceipt(x.id)}}
-function salReceipt(pid){const p=S.staff[view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;
+function salReceipt(pid,sid){const p=S.staff[sid||view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;
   receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",p.job||"—"],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(x.note?[["ملاحظة",x.note]]:[]),
     sign:["توقيع المستلم","توقيع المدير"],file:"راتب-"+x.n,lead:"استلمتُ من إدارة المدرسة مبلغ راتبي"})}
 function delSal(pid){ask("حذف هذا الراتب؟ سيرجع مبلغه إلى القاصة العامة.","احذف",()=>{const o=JSON.parse(JSON.stringify(S.staff[view.id]));o.pays=o.pays.filter(x=>x.id!==pid);put("staff",view.id,o)})}
@@ -695,11 +699,11 @@ async function receipt(o){
   ctx.strokeStyle="#1f5240";ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(W/2,y+30,58,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle="#9db1a8";ctx.font="500 18px "+F;ctx.fillText("الختم",W/2,y+36);
   const url=cv.toDataURL("image/png");
-  modal(o.kind+" رقم "+(o.no||""),`<img class="rcpt" src="${url}" alt="${esc(o.kind)}"><div class="hint">يمكنك أيضًا الضغط على الصورة مطوّلًا واختيار «حفظ الصورة».</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button>`,true);
+  modal(o.kind+" رقم "+(o.no||""),`<img class="rcpt" src="${url}" alt="${esc(o.kind)}"><div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button>`,true);
   const fn=(o.file||"وصل")+".png";
   $("#sv").onclick=()=>{cv.toBlob(b=>saveBlob(b,fn),"image/png")};
   $("#sh").onclick=()=>{cv.toBlob(b=>shareBlob(b,fn,o.kind+" رقم "+(o.no||"")),"image/png")}}
-function saveBlob(b,fn){const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("تم الحفظ في التنزيلات")}
+function saveBlob(b,fn){const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("حُفظ في مجلد التنزيلات (Download)")}
 function shareBlob(b,fn,title){try{const f=new File([b],fn,{type:b.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title}).catch(()=>{});return}}catch(e){}saveBlob(b,fn)}
 
 /* ---------- PIN lock ---------- */
@@ -717,12 +721,86 @@ function lockScreen(){const p=pinGet();if(!p)return;
   document.body.appendChild(d);const i=d.querySelector("#lk");setTimeout(()=>i.focus(),50);
   i.addEventListener("input",()=>{const v=toEn(i.value);if(v.length===4){if(v===p)d.remove();else{d.querySelector("#lkE").textContent="الرمز غير صحيح";i.value=""}}})}
 
+/* ---------- receipts archive ---------- */
+function allReceipts(){const r=[];
+  classIds().forEach(cid=>(getCls(cid).students||[]).forEach((st,si)=>(st.pays||[]).forEach(p=>r.push({t:"st",n:p.n,d:p.d,a:+p.a,name:st.name,sub:"قسط · "+clsName(cid),cid,si,pid:p.id}))));
+  Object.entries(S.staff).forEach(([sid,p])=>(p.pays||[]).forEach(x=>r.push({t:"sal",n:x.n,d:x.d,a:+x.a,name:p.name,sub:"راتب "+mlabel(x.m),sid,pid:x.id})));
+  Object.entries(S.expenses).forEach(([id,e])=>r.push({t:"exp",n:e.n,d:e.d,a:+e.a,name:e.who||"",sub:"صرف · "+(e.what||""),id}));
+  return r.sort((a,b)=>(b.n||0)-(a.n||0)||(b.d||"").localeCompare(a.d||""))}
+function openRc(r){if(r.t==="st")stuReceipt(r.pid,r.cid,r.si);else if(r.t==="sal")salReceipt(r.pid,r.sid);else expReceipt(r.id)}
+const RT={st:["أقساط","in"],sal:["رواتب","out"],exp:["مصاريف","out"]};
+function rcV(){const f=view.f||"",q=(view.q||"").trim();
+  const all=allReceipts();const L=all.filter(r=>(!f||r.t===f)&&(!q||r.name.includes(q)||r.sub.includes(q)||String(r.n)===toEn(q)));window.__rc=L;
+  const rows=L.slice(0,view.all?L.length:60).map((r,i)=>`<button class="stu" data-act="openRc" data-i="${i}"><span class="no num" style="font-size:12px">${r.n||"-"}</span>
+    <span><div class="nm">${esc(r.name)}</div><div class="meta">${esc(r.sub)} · ${dtext(r.d)}</div></span>
+    <span class="rem"><div class="meta">${r.t==="st"?"قبض":"صرف"}</div><div class="${RT[r.t][1]}">${money(r.a)}</div></span></button>`).join("");
+  return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">🗂️ الوصولات</h2></div>
+  ${status()}
+  <div class="hint">كل وصل يُسجَّل هنا تلقائيًا. اضغط على أي وصل لتفتحه من جديد وتحفظه أو ترسله.</div>
+  <div class="tabs"><button class="tab ${!f?"on":""}" data-act="rcF" data-f="">الكل (${all.length})</button>${Object.entries(RT).map(([k,v])=>`<button class="tab ${f===k?"on":""}" data-act="rcF" data-f="${k}">${v[0]} (${all.filter(r=>r.t===k).length})</button>`).join("")}</div>
+  <input class="search" id="q" style="width:100%" placeholder="ابحث باسم الطالب أو المدرّس أو رقم الوصل…" value="${esc(view.q||"")}">
+  <div class="list">${rows||`<div class="empty">${q?"لا يوجد وصل مطابق":"لا توجد وصولات بعد. كل دفعة أو راتب أو مصروف تسجّله يطلع وصله هنا."}</div>`}</div>
+  ${L.length>60&&!view.all?`<div class="row" style="margin-top:10px"><button class="btn ghost" data-act="allMv">اعرض كل الوصولات (${L.length})</button></div>`:""}`}
+
+/* ---------- reports ---------- */
+function moves(){const mv=[];
+  classIds().forEach(cid=>(getCls(cid).students||[]).forEach(st=>(st.pays||[]).forEach(p=>mv.push({t:"st",d:p.d,a:+p.a,n:p.n,g:+cid[1],txt:st.name+" — "+clsName(cid)}))));
+  Object.values(S.staff).forEach(p=>(p.pays||[]).forEach(x=>mv.push({t:"sal",d:x.d,a:+x.a,n:x.n,txt:p.name+" — راتب "+mlabel(x.m)})));
+  Object.values(S.expenses).forEach(e=>mv.push({t:"exp",d:e.d,a:+e.a,n:e.n,txt:(e.what||"")+(e.who?" — استلمه "+e.who:"")}));
+  return mv}
+const sumT=(L,t)=>L.filter(m=>m.t===t).reduce((s,m)=>s+m.a,0);
+function saveFile(b,fn){
+  if(typeof dl!=="undefined"&&dl){dl.save({filename:fn,data:b}).then(()=>toast("حُفظ في مجلد التنزيلات (Download)")).catch(e=>{if(e&&e.code!=="declined")toast("تعذّر الحفظ")});return}
+  const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("حُفظ في مجلد التنزيلات (Download)")}
+function csv(rows){return "\ufeff"+rows.map(r=>r.map(c=>{c=String(c==null?"":c);return /[",\n]/.test(c)?'"'+c.replace(/"/g,'""')+'"':c}).join(",")).join("\r\n")}
+function repV(){const k=view.k||"d";const mv=moves();
+  const head=`<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">📊 التقارير</h2></div>${status()}
+  <div class="tabs"><button class="tab ${k==="d"?"on":""}" data-act="go" data-v="rep" data-k="d">📅 التقرير اليومي</button><button class="tab ${k==="y"?"on":""}" data-act="go" data-v="rep" data-k="y">🗓️ التقرير السنوي</button></div>`;
+  if(k==="d"){const day=view.d||today();const L=mv.filter(m=>m.d===day).sort((a,b)=>(a.n||0)-(b.n||0));
+    const upto=mv.filter(m=>m.d<=day);const bal=sumT(upto,"st")-sumT(upto,"sal")-sumT(upto,"exp");
+    const i=sumT(L,"st"),sl=sumT(L,"sal"),x=sumT(L,"exp");
+    const sec=(t,ttl)=>{const R=L.filter(m=>m.t===t);return R.length?`<h2 class="sec">${ttl} <span class="tag">${R.length} عملية</span></h2><div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الوصل</th><th>البيان</th><th>المبلغ</th></tr></thead><tbody>${R.map(m=>`<tr><td class="num">${m.n||""}</td><td style="min-width:180px">${esc(m.txt)}</td><td class="${t==="st"?"in":"out"}">${money(m.a)}</td></tr>`).join("")}</tbody></table></div></div>`:""};
+    return head+`<div class="row"><div class="fld" style="flex:0 1 220px"><label for="repD">اختر اليوم</label><input id="repD" type="date" value="${esc(day)}"></div>
+      <button class="btn ghost sm" data-act="repDay" data-s="-1">→ اليوم السابق</button><button class="btn ghost sm" data-act="repDay" data-s="1">اليوم التالي ←</button></div>
+    <h2 class="sec">${dtext(day)}</h2>
+    <div class="board"><div><div class="l">المقبوض من الأقساط</div><div class="v">${money(i)}</div></div><div><div class="l">الرواتب المدفوعة</div><div class="v">${money(sl)}</div></div>
+      <div><div class="l">المصاريف</div><div class="v">${money(x)}</div></div><div><div class="l">صافي اليوم</div><div class="v ch">${money(i-sl-x)}</div></div>
+      <div><div class="l">رصيد القاصة العامة نهاية اليوم</div><div class="v">${money(bal)}</div></div></div>
+    ${L.length?sec("st","الأقساط المقبوضة")+sec("sal","الرواتب")+sec("exp","المصاريف"):`<div class="empty">لا توجد حركات في هذا اليوم</div>`}
+    ${L.length?`<div class="row" style="margin-top:12px"><button class="btn gold" data-act="repCsv">💾 احفظ التقرير ملف Excel</button></div>`:""}`}
+  const ms=yearMonths();let T={i:0,s:0,x:0};
+  const rows=ms.map(m=>{const L=mv.filter(z=>(z.d||"").startsWith(m));const i=sumT(L,"st"),sl=sumT(L,"sal"),x=sumT(L,"exp");T.i+=i;T.s+=sl;T.x+=x;
+    return `<tr><td><b>${mlabel(m)}</b></td><td class="in">${money(i)}</td><td class="out">${money(sl)}</td><td class="out">${money(x)}</td><td><b>${money(i-sl-x)}</b></td></tr>`}).join("");
+  const gr=[1,2,3,4,5,6].map(g=>{const a=clsStats("g"+g+"a"),b=clsStats("g"+g+"b");return `<tr><td><b>الصف ${GR[g-1]}</b></td><td class="num">${a.n+b.n}</td><td>${money(a.due+b.due)}</td><td class="in">${money(a.paid+b.paid)}</td><td class="out">${money(a.rem+b.rem)}</td><td class="num">${a.late+b.late}</td></tr>`}).join("");
+  const t=totals();
+  return head+`<h2 class="sec">السنة الدراسية ${esc(yearLabel())}</h2>
+  <div class="board"><div><div class="l">مجموع الأقساط المقبوضة</div><div class="v">${money(T.i)}</div></div><div><div class="l">مجموع الرواتب</div><div class="v">${money(T.s)}</div></div>
+    <div><div class="l">مجموع المصاريف</div><div class="v">${money(T.x)}</div></div><div><div class="l">صافي السنة</div><div class="v ch">${money(T.i-T.s-T.x)}</div></div>
+    <div><div class="l">الباقي على الطلاب</div><div class="v">${money(t.rem)}</div></div></div>
+  <h2 class="sec">حسب الأشهر</h2>
+  <div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الشهر</th><th>الأقساط</th><th>الرواتب</th><th>المصاريف</th><th>الصافي</th></tr></thead><tbody>${rows}
+    <tr><td><b>المجموع</b></td><td class="in">${money(T.i)}</td><td class="out">${money(T.s)}</td><td class="out">${money(T.x)}</td><td><b>${money(T.i-T.s-T.x)}</b></td></tr></tbody></table></div></div>
+  <h2 class="sec">حسب الصفوف</h2>
+  <div class="card" style="padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>الصف</th><th>الطلاب</th><th>المطلوب</th><th>قاصة الصف</th><th>الباقي</th><th>متأخرون</th></tr></thead><tbody>${gr}</tbody></table></div></div>
+  <div class="row" style="margin-top:12px"><button class="btn gold" data-act="repCsv">💾 احفظ التقرير ملف Excel</button></div>`}
+function repCsv(){const mv=moves();
+  if((view.k||"d")==="d"){const day=view.d||today();const L=mv.filter(m=>m.d===day);
+    const R=[[schoolName()],["التقرير اليومي",day],[],["رقم الوصل","النوع","البيان","داخل","خارج"]];
+    L.forEach(m=>R.push([m.n||"",m.t==="st"?"قسط":m.t==="sal"?"راتب":"مصروف",m.txt,m.t==="st"?m.a:"",m.t==="st"?"":m.a]));
+    R.push([],["المجموع","","",sumT(L,"st"),sumT(L,"sal")+sumT(L,"exp")]);
+    saveFile(new Blob([csv(R)],{type:"text/csv"}),"تقرير-يومي-"+day+".csv");return}
+  const R=[[schoolName()],["التقرير السنوي",yearLabel()],[],["الشهر","الأقساط","الرواتب","المصاريف","الصافي"]];
+  yearMonths().forEach(m=>{const L=mv.filter(z=>(z.d||"").startsWith(m));const i=sumT(L,"st"),s=sumT(L,"sal"),x=sumT(L,"exp");R.push([mlabel(m),i,s,x,i-s-x])});
+  R.push([],["الصف","الطلاب","المطلوب","المقبوض","الباقي","المتأخرون"]);
+  [1,2,3,4,5,6].forEach(g=>{const a=clsStats("g"+g+"a"),b=clsStats("g"+g+"b");R.push(["الصف "+GR[g-1],a.n+b.n,a.due+b.due,a.paid+b.paid,a.rem+b.rem,a.late+b.late])});
+  saveFile(new Blob([csv(R)],{type:"text/csv"}),"تقرير-سنوي-"+yearLabel().replace(/\s/g,"")+".csv")}
+
 /* ---------- events ---------- */
 document.addEventListener("click",e=>{
   const b=e.target.closest("[data-act]");if(!b)return;const a=b.dataset.act,d=b.dataset;
   if(a==="close")return close();
   if(a==="fback")return go(window.__pv||{v:"home"});
-  if(a==="go")return go({v:d.v,k:d.k});
+  if(a==="go")return go({v:d.v,k:d.k,d:d.d});
   if(a==="cls")return go({v:"cls",id:d.id});
   if(a==="stu")return go({v:"stu",id:view.id,i:+d.i});
   if(a==="person")return go({v:"person",id:d.id});
@@ -740,6 +818,10 @@ document.addEventListener("click",e=>{
   if(a==="addExp")return expModal();
   if(a==="editExp")return expModal(d.id);
   if(a==="rcExp")return expReceipt(d.id);
+  if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
+  if(a==="rcF"){view.f=d.f;view.all=0;return render()}
+  if(a==="repCsv")return repCsv();
+  if(a==="repDay"){const t=new Date((view.d||today())+"T12:00:00");t.setDate(t.getDate()+(+d.s));view.d=t.toISOString().slice(0,10);view.keep=1;return render()}
   if(a==="allMv"){view.all=1;view.keep=1;return render()}
   if(a==="backup"){put("cfg","main",Object.assign({},cfg(),{lastBk:today()}));const data=JSON.stringify({app:"madrasa",school:schoolName(),saved:today(),data:S});
     const b=new Blob([data],{type:"application/json"});const fn="نسخة-المدرسة-"+today()+".json";
@@ -758,7 +840,7 @@ document.addEventListener("input",e=>{
   if(t.id==="q"){view.q=t.value;render();return}
   if(t.classList.contains("amt")){const v=pnum(t.value);t.value=v?fmt(v):"";const w=$("#"+t.id+"W");if(w)w.textContent=v?wordsIQD(v):""}
 });
-document.addEventListener("change",e=>{if(e.target.id==="expM"){view.m=e.target.value;render()}});
+document.addEventListener("change",e=>{if(e.target.id==="expM"){view.m=e.target.value;render()}if(e.target.id==="repD"){view.d=e.target.value||today();view.keep=1;render()}});
 document.addEventListener("submit",e=>{if(e.target.id==="setF"){e.preventDefault();
   const o=Object.assign({},cfg(),{name:$("#sName").value.trim(),addr:$("#sAddr").value.trim(),sm:+$("#sSm").value,y0:pnum($("#sY0").value)||undefined});
   const m=yearMonths.call(null);o.start=(o.y0||m[0].slice(0,4))+"-"+String(o.sm).padStart(2,"0")+"-01";
