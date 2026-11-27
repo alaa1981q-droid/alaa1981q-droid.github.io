@@ -395,6 +395,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
+const APP_VER="22";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -575,7 +576,7 @@ function homeV(){
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
   <div class="grades">${g}</div>
   ${S.classes.gx&&(S.classes.gx.students||[]).length?(()=>{const x=clsStats("gx");return `<button class="navb" style="width:100%;margin-top:12px" data-act="cls" data-id="gx"><span class="ic">🎓</span><span>الخريجون — ديون سابقة<small>${x.n} خرّيجًا · الباقي عليهم ${fmt(x.rem)} د.ع</small></span></button>`})():""}
-  <div class="foot">${esc(schoolName())} · كل وصل يُرقَّم تلقائيًا · الطالب الذي يمضي عليه ٤ أشهر بلا تسديد يُعلَّم بالأحمر</div>`}
+  <div class="foot">الإصدار ${APP_VER} · ${esc(schoolName())} · كل وصل يُرقَّم تلقائيًا · الطالب الذي يمضي عليه ٤ أشهر بلا تسديد يُعلَّم بالأحمر</div>`}
 
 function list0(id,c,sts){return sts.map(({s,i})=>{const d=due(s,c),p=paid(s),r=d-p,l=isLate(s,c);
     return `<button class="stu ${l?"late":""}" data-act="stu" data-i="${i}"><span class="no">🎓</span><span><div class="nm">${esc(s.name)} ${l?`<span class="pill r">متأخر ${lateMonths(s)} أشهر</span>`:""}${r<=0?` <span class="pill g">سدّد دَينه</span>`:""}</div>
@@ -788,6 +789,10 @@ function setV(){
   <div class="card" style="margin-top:12px;display:grid;gap:8px">
     <b>☁️ الحساب والسحابة</b><div class="hint">${fbuser?`مسجّل الدخول بـ <span dir="ltr">${esc(fbuser.email||"")}</span>. كل ما تسجّله يُحفظ في السحابة ويظهر على كل جهاز تدخل منه.`:"غير مسجّل الدخول."}</div>
     ${fbuser?`<div class="row">${cloudPill()}<button class="btn ghost sm" data-act="logout">🚪 تسجيل الخروج من هذا الجهاز</button></div>`:""}
+  </div>
+  <div class="card" style="margin-top:12px;display:grid;gap:8px">
+    <b>🔄 تحديث التطبيق</b><div class="hint">الإصدار الحالي على هذا الجهاز: <b>${APP_VER}</b>. إذا أُضيفت ميزات جديدة ولم تظهر، اضغط الزر (يحتاج إنترنت). بياناتك لا تُمسح.</div>
+    <div class="row"><button class="btn ghost" data-act="forceUpd">🔄 حدّث التطبيق الآن</button></div>
   </div>
   <div class="card" style="margin-top:12px;display:grid;gap:8px">
     <b>🔒 رمز الدخول</b><div class="hint">${pinGet()?"التطبيق مقفول برمز، ويطلبه كل مرة تفتحه.":"ضع رمزًا من 4 أرقام حتى لا يفتح أحد الحسابات غيرك."}</div>
@@ -1205,6 +1210,9 @@ document.addEventListener("click",e=>{
   if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
   if(a==="rcF"){view.f=d.f;view.all=0;return render()}
   if(a==="repCsv")return repCsv();
+  if(a==="forceUpd"){if(!navigator.onLine){toast("التحديث يحتاج إنترنت");return}toast("جارِ التحديث…");
+    (async()=>{try{if(window.caches){for(const k of await caches.keys())await caches.delete(k)}if(navigator.serviceWorker){for(const r of await navigator.serviceWorker.getRegistrations())await r.unregister()}}catch(e){}
+      location.replace(location.pathname+"?u="+Date.now())})();return}
   if(a==="addInc")return incModal();
   if(a==="editInc")return incModal(d.id);
   if(a==="rcInc")return incReceipt(d.id,1);
