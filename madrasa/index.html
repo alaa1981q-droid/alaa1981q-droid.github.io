@@ -352,7 +352,7 @@ function render(){
   const a=$("#app");if(!a)return;
   const v=view.v;let h="";
   if(v==="home")h=homeV();else if(v==="cls")h=clsV();else if(v==="stu")h=stuV();else if(v==="staff")h=staffV();
-  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();else if(v==="rc")h=rcV();else if(v==="rep")h=repV();
+  else if(v==="person")h=personV();else if(v==="exp")h=expV();else if(v==="cash")h=cashV();else if(v==="set")h=setV();else if(v==="rc")h=rcV();else if(v==="late")h=lateV();else if(v==="rep")h=repV();
   if(v!=="home"){const pv=v==="stu"?{v:"cls",id:view.id}:v==="person"?{v:"staff",k:(S.staff[view.id]||{}).kind||"t"}:{v:"home"};
     window.__pv=pv;h+=`<button class="fback" data-act="fback" aria-label="رجوع">→ رجوع</button>`}
   const sy=window.scrollY;a.innerHTML=h;
@@ -361,11 +361,11 @@ function render(){
 }
 /* phone back button: every screen and every open window is a step in the history (#name) */
 function v2h(v){switch(v.v){case"cls":return"cls-"+v.id;case"stu":return"stu-"+v.id+"-"+v.i;case"staff":return"staff-"+(v.k||"t");case"person":return"person-"+v.id;
-  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"rep":return"rep-"+({m:"month",y:"year"}[v.k]||"day");default:return"home"}}
+  case"exp":return"exp";case"cash":return"cash";case"set":return"set";case"rc":return"rc";case"late":return"late";case"rep":return"rep-"+({m:"month",y:"year"}[v.k]||"day");default:return"home"}}
 function h2v(h){h=(h||"").replace(/^#/,"").replace(/-m$/,"");const p=h.split("-");
   if(p[0]==="cls"&&p[1])return{v:"cls",id:p[1]};if(p[0]==="stu"&&p[1])return{v:"stu",id:p[1],i:+p[2]||0};
   if(p[0]==="staff")return{v:"staff",k:p[1]==="w"?"w":"t"};if(p[0]==="person"&&p[1])return{v:"person",id:p.slice(1).join("-")};
-  if(["exp","cash","set","rc"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="month"?"m":p[1]==="year"?"y":"d"};return{v:"home"}}
+  if(["exp","cash","set","rc","late"].includes(p[0]))return{v:p[0]};if(p[0]==="rep")return{v:"rep",k:p[1]==="month"?"m":p[1]==="year"?"y":"d"};return{v:"home"}}
 let pendingBack=false,afterBack=[],backT=0;
 function flushBack(){pendingBack=false;clearTimeout(backT);const q=afterBack;afterBack=[];q.forEach(f=>f())}
 function go(v){
@@ -410,13 +410,14 @@ function homeV(){
     <button class="kpi" data-act="go" data-v="staff"><div class="l">الرواتب المدفوعة</div><div class="v r">${money(t.sal)}</div></button>
     <button class="kpi" data-act="go" data-v="exp"><div class="l">المصاريف العامة</div><div class="v r">${money(t.ex)}</div></button>
     <div class="kpi"><div class="l">عدد الطلاب</div><div class="v"><span class="num">${t.n}</span></div></div>
-    <div class="kpi"><div class="l">متأخرون عن التسديد (٤ أشهر)</div><div class="v ${t.late?"r":""}"><span class="num">${t.late}</span></div></div>
+    <button class="kpi" data-act="go" data-v="late"><div class="l">متأخرون عن التسديد (٤ أشهر)</div><div class="v ${t.late?"r":""}"><span class="num">${t.late}</span></div></button>
   </div>
   <div class="nav">
     <button class="navb" data-act="go" data-v="staff" data-k="t"><span class="ic">👨‍🏫</span><span>المدرّسون<small>الأسماء والرواتب</small></span></button>
     <button class="navb" data-act="go" data-v="staff" data-k="w"><span class="ic">🧹</span><span>العاملون<small>الأسماء والرواتب</small></span></button>
     <button class="navb" data-act="go" data-v="exp"><span class="ic">🧾</span><span>المصاريف العامة<small>المبلغ ومن أخذه ولماذا</small></span></button>
     <button class="navb" data-act="go" data-v="cash"><span class="ic">💰</span><span>القاصة العامة للمدرسة<small>الرصيد وكل الداخل والخارج</small></span></button>
+    <button class="navb" data-act="go" data-v="late"><span class="ic" style="background:var(--badbg)">⏰</span><span>المتأخرون<small>٤ أشهر فما فوق بلا تسديد${t.late?` · <b style="color:var(--bad)">${t.late}</b>`:""}</small></span></button>
     <button class="navb" data-act="go" data-v="rc"><span class="ic">🗂️</span><span>الوصولات<small>كل الوصولات المحفوظة</small></span></button>
     <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>يومي وشهري وسنوي</small></span></button>
     <button class="navb" data-act="go" data-v="set"><span class="ic">⚙️</span><span>الإعدادات<small>اسم المدرسة والسنة</small></span></button>
@@ -730,6 +731,21 @@ function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=(s.pays||
   rows.push(["مجموع المدفوع",fmt(p)+" د.ع"],["الباقي عليه",fmt(Math.max(d-p,0))+" د.ع"]);
   receipt({kind:"كشف حساب طالب",no:"—",date:today(),amount:p,rows,lead:"مجموع ما دفعه الطالب حتى اليوم",sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"كشف-"+s.name})}
 
+function lateList(){const L=[];classIds().forEach(cid=>{const c=getCls(cid);(c.students||[]).forEach((st,si)=>{if(isLate(st,c))L.push({st,cid,si,mo:lateMonths(st),rem:due(st,c)-paid(st),lp:lastPay(st)})})});
+  return L.sort((a,b)=>b.mo-a.mo||b.rem-a.rem)}
+function lateV(){const L=lateList();const q=(view.q||"").trim();const R=L.filter(x=>!q||x.st.name.includes(q));const tot=L.reduce((s,x)=>s+x.rem,0);
+  const rows=R.map(x=>`<button class="stu late" data-act="lateOpen" data-c="${x.cid}" data-i="${x.si}"><span class="no" style="background:var(--badbg);color:var(--bad)"><span class="num">${x.mo}</span></span>
+    <span><div class="nm">${esc(x.st.name)}</div><div class="meta">${clsName(x.cid)} · ${x.lp?"آخر تسديد "+dtext(x.lp):"لم يسدّد أي دفعة"}</div>
+    ${x.st.phone||x.st.parent?`<div class="meta">ولي الأمر: ${esc(x.st.parent||"")} ${x.st.phone?`· <span class="num">${esc(x.st.phone)}</span>`:""}</div>`:""}</span>
+    <span class="rem"><div class="meta">متأخر ${x.mo} أشهر · الباقي</div><div class="out">${money(x.rem)}</div></span></button>`).join("");
+  return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">⏰ الطلاب المتأخرون</h2></div>
+  ${status()}
+  <div class="board" style="background:linear-gradient(180deg,#8f2f2a,#6d211d)"><div><div class="l">عدد المتأخرين</div><div class="v ch"><span class="num">${L.length}</span></div></div>
+    <div><div class="l">مجموع الباقي عليهم</div><div class="v">${money(tot)}</div></div></div>
+  <div class="hint" style="margin-top:8px">يظهر هنا كل طالب مضى عليه ٤ أشهر أو أكثر من آخر تسديد (أو من يوم تسجيله إذا لم يدفع شيئًا) وما زال عليه مبلغ. الرقم الأحمر = عدد الأشهر. اضغط على الاسم لتسجّل دفعته.</div>
+  <div class="row" style="margin-top:10px"><input class="search" id="q" placeholder="ابحث عن اسم…" value="${esc(view.q||"")}">${L.length?`<button class="btn gold" data-act="lateCsv">💾 احفظ القائمة Excel</button>`:""}</div>
+  <div class="list">${rows||`<div class="empty">${q?"لا يوجد اسم مطابق":"✔ لا يوجد طلاب متأخرون. كل الطلاب سدّدوا خلال آخر ٤ أشهر."}</div>`}</div>`}
+
 /* ---------- receipts archive ---------- */
 function allReceipts(){const r=[];
   classIds().forEach(cid=>(getCls(cid).students||[]).forEach((st,si)=>(st.pays||[]).forEach(p=>r.push({t:"st",n:p.n,d:p.d,a:+p.a,name:st.name,sub:"قسط · "+clsName(cid),cid,si,pid:p.id}))));
@@ -854,6 +870,10 @@ document.addEventListener("click",e=>{
   if(a==="openRc"){const r=(window.__rc||[])[+d.i];if(r)openRc(r);return}
   if(a==="rcF"){view.f=d.f;view.all=0;return render()}
   if(a==="repCsv")return repCsv();
+  if(a==="lateOpen")return go({v:"stu",id:d.c,i:+d.i});
+  if(a==="lateCsv"){const R=[[schoolName()],["الطلاب المتأخرون ٤ أشهر فما فوق",today()],[],["الاسم","الصف","ولي الأمر","الهاتف","آخر تسديد","أشهر التأخير","الباقي"]];
+    lateList().forEach(x=>R.push([x.st.name,clsName(x.cid),x.st.parent||"",x.st.phone||"",x.lp||"لم يسدد",x.mo,x.rem]));
+    saveFile(new Blob([csv(R)],{type:"text/csv"}),"المتأخرون-"+today()+".csv");return}
   if(a==="repDay"){const t=new Date((view.d||today())+"T12:00:00");t.setDate(t.getDate()+(+d.s));view.d=t.toISOString().slice(0,10);view.keep=1;return render()}
   if(a==="allMv"){view.all=1;view.keep=1;return render()}
   if(a==="backup"){put("cfg","main",Object.assign({},cfg(),{lastBk:today()}));const data=JSON.stringify({app:"madrasa",school:schoolName(),saved:today(),data:S});
