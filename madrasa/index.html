@@ -607,7 +607,7 @@ function feeModal(){const c=getCls(view.id);const g=view.id.slice(0,2);
 function stuModal(i){const c=getCls(view.id);const s=i!=null?c.students[i]:{};const edit=i!=null;
   modal(edit?"تعديل بيانات الطالب":"طالب جديد في "+clsName(view.id),
     fld("sN","اسم الطالب الثلاثي",s.name,'autocomplete="off"')+fld("sP","اسم ولي الأمر",s.parent)+fld("sT","هاتف ولي الأمر",s.phone,'inputmode="tel"')+
-    `<div class="fld"><label for="sF">مبلغ خاص لهذا الطالب (اختياري)</label><input id="sF" class="amt" inputmode="numeric" value="${s.fee!=null&&s.fee!==""?fmt(s.fee):""}"><div class="words" id="sFW"></div><div class="hint">اتركه فارغًا ليأخذ قسط الصف (${fmt(c.fee||0)} د.ع). اكتب مبلغًا إذا كان عليه خصم، مثل الإخوة.</div></div>`+
+    `<div class="fld"><label for="sF">قسط مخفَّض لهذا الطالب (اتركه فارغًا إذا يدفع القسط كاملًا)</label><input id="sF" class="amt" inputmode="numeric" value="${s.fee!=null&&s.fee!==""?fmt(s.fee):""}"><div class="words" id="sFW"></div><div class="hint">القسط الكامل للصف ${fmt(c.fee||0)} د.ع. إذا عنده خصم (مثل الإخوة أو ابن موظف) اكتب هنا المبلغ الذي يدفعه بعد الخصم، فيُحسب عليه بدل القسط الكامل.</div></div>`+
     (edit?`<div class="fld"><label for="sMv">نقل إلى شعبة أخرى</label><select id="sMv">${classIds().map(id=>`<option value="${id}" ${id===view.id?"selected":""}>${clsName(id)}</option>`).join("")}</select></div>`:"")+`<div class="err" id="er"></div>`,
     `<button class="btn" id="ok">${edit?"احفظ":"أضف الطالب"}</button>${edit?`<button class="btn red" id="dS" type="button">حذف الطالب</button>`:""}${edit?"":`<button class="btn ghost" id="ok2" type="button">أضف وابدأ بالتالي</button>`}`);
   const save=(again)=>{const n=$("#sN").value.trim();if(!n){$("#er").textContent="اكتب اسم الطالب";return}
