@@ -189,6 +189,9 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
   box-shadow:inset 0 2px 0 rgba(255,255,255,.5),0 4px 0 var(--chalkd),0 10px 22px rgba(0,0,0,.25)}
 .fback:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.4),0 1px 0 var(--chalkd),0 4px 8px rgba(0,0,0,.2)}
 #app{padding-bottom:70px}
+.gs{margin-top:14px;display:grid;gap:6px}
+.gsl{font-weight:700;font-size:15px}
+.gs .search{width:100%;padding:13px 14px;font-size:16px;border-width:2px;border-color:var(--board);box-shadow:inset 0 2px 0 rgba(0,0,0,.04),0 4px 0 #b9c7c0}
 .foot{margin-top:28px;text-align:center;font-size:12.5px;color:var(--mute)}
 /* every button is 3D: darker bottom edge + soft drop shadow + inner top highlight, presses down on tap */
 .btn,.back,.tab,.navb,button.kpi,.stu,.slot.add,.secb{--e:var(--line);position:relative;border-radius:14px;
@@ -385,6 +388,18 @@ function status(){
     if(has&&n>=7)return `<div class="note">💾 البيانات محفوظة على هذا الجهاز وتشتغل بلا إنترنت. ${lb?"آخر نسخة احتياطية قبل "+n+" يومًا":"لم تحفظ نسخة احتياطية بعد"}: <button class="btn gold sm" data-act="backup">احفظ نسخة الآن</button></div>`;return ""}
   return ""}
 
+function homeSearch(){const q=(view.q||"").trim();let res="";
+  if(q){const L=[];const qq=toEn(q);classIds().forEach(cid=>{const c=getCls(cid);(c.students||[]).forEach((st,si)=>{
+      if(st.name.includes(q)||(st.parent||"").includes(q)||(qq.length>=4&&toEn(st.phone||"").includes(qq)))L.push({st,c,cid,si})})});
+    res=L.slice(0,30).map(({st,c,cid,si})=>{const d=due(st,c),pd=paid(st),r=d-pd,l=isLate(st,c);
+      return `<button class="stu ${l?"late":""}" data-act="lateOpen" data-c="${cid}" data-i="${si}"><span class="no">🎓</span>
+      <span><div class="nm">${esc(st.name)} ${l?`<span class="pill r">متأخر ${lateMonths(st)} أشهر</span>`:""}${r<=0&&d>0?` <span class="pill g">مسدَّد بالكامل</span>`:""}</div>
+      <div class="meta">${clsName(cid)}${st.parent?" · ولي الأمر: "+esc(st.parent):""}</div>
+      <div class="meta">📞 ${st.phone?`<span class="num">${esc(st.phone)}</span>`:"لا يوجد رقم"}</div>
+      <div class="meta">سدّد ${money(pd)} من ${money(d)} · ${(st.pays||[]).length} دفعات</div></span>
+      <span class="rem"><div class="meta">الباقي</div><div class="${r>0?"out":"in"}">${money(Math.max(r,0))}</div></span></button>`}).join("")||`<div class="empty">لا يوجد طالب بهذا الاسم</div>`;
+    if(L.length>30)res+=`<div class="hint">ظهر أول ٣٠ نتيجة، اكتب الاسم أوضح.</div>`}
+  return `<div class="gs"><label for="q" class="gsl">🔍 ابحث عن طالب</label><input class="search" id="q" type="search" autocomplete="off" placeholder="اكتب اسم الطالب أو ولي الأمر أو رقم الهاتف…" value="${esc(view.q||"")}"></div>${q?`<div class="list" style="margin-bottom:8px">${res}</div>`:""}`}
 function homeV(){
   const t=totals();
   let g="";
@@ -404,6 +419,7 @@ function homeV(){
     <div class="sub">حسابات الأقساط والرواتب والمصاريف</div>
   </div><div><img class="schoolImg" src="school.jpg" alt="مبنى مدرسة الأوائل"></div></div></header>
   ${status()}
+  ${homeSearch()}
   <div class="kpis">
     <button class="kpi" data-act="go" data-v="cash"><div class="l">مجموع ما سدّده الطلاب</div><div class="v g">${money(t.inc)}</div></button>
     <div class="kpi"><div class="l">الباقي على الطلاب</div><div class="v">${money(t.rem)}</div></div>
