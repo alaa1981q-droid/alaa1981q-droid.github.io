@@ -261,6 +261,14 @@ tr.void td{text-decoration:line-through;opacity:.6}
 .btn.ghost,.back,.tab,.navb,button.kpi,.stu,.slot.add{--e:#b9c7c0}
 .tab.on{--e:var(--board2);box-shadow:inset 0 2px 0 rgba(255,255,255,.22),0 4px 0 var(--e),0 8px 16px rgba(24,48,42,.18)}
 .stu.late{--e:#e3a7a2}
+.lcG{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.lcC{--e:#e3a7a2;text-align:right;background:linear-gradient(180deg,#fff,#fdeeed);border:1px solid #efc4c0;border-radius:14px;padding:10px 12px;font:inherit;color:var(--ink);cursor:pointer;box-shadow:inset 0 2px 0 rgba(255,255,255,.6),0 4px 0 var(--e),0 8px 16px rgba(24,48,42,.12)}
+.lcC:active{transform:translateY(3px);box-shadow:0 1px 0 var(--e)}
+.lcC.on{border-color:var(--bad);outline:2px solid var(--bad)}
+.lcC .h{display:flex;justify-content:space-between;align-items:center;gap:6px;font-size:15.5px}
+.lcC .n{background:var(--bad);color:#fff;border-radius:99px;padding:1px 10px;font-size:13px;font-weight:700}
+.lcC .ch{display:flex;flex-wrap:wrap;gap:5px;margin:7px 0 5px}.lcC .ch span{background:#fff;border:1px solid #efc4c0;border-radius:8px;padding:1px 7px;font-size:13px}
+.lcC .f{font-size:12.5px;color:var(--mute);font-weight:600}
 .secb{border-radius:0;box-shadow:inset 0 2px 0 rgba(255,255,255,.5),inset 0 -4px 0 var(--line)}
 .btn:active,.back:active,.tab:active,.navb:active,button.kpi:active,.stu:active,.slot.add:active{transform:translateY(3px);box-shadow:inset 0 2px 0 rgba(255,255,255,.3),0 1px 0 var(--e),0 3px 6px rgba(24,48,42,.12)}
 .secb:active{transform:translateY(2px)}
@@ -301,7 +309,8 @@ const mlabel=k=>{const [y,m]=k.split("-");return MN[+m-1]+" "+y};
 const days=d=>Math.floor((Date.now()-new Date(d+"T00:00:00").getTime())/864e5);
 const GR=["الأول","الثاني","الثالث","الرابع","الخامس","السادس"];
 const SECS=["أ","ب"];
-const LATE_DAYS=120;
+const LATE_DAYS=60;
+function moTxt(n){return n==1?"شهر":n==2?"شهرين":n<=10?n+" أشهر":n+" شهرًا"}
 
 /* tafqeet: Iraqi dinar amount in Arabic words */
 function words(n){
@@ -425,7 +434,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="34";
+const APP_VER="35";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -547,7 +556,7 @@ function status(){
 const RES={p:["✅ ناجح","g"],f:["❌ راسب","r"]};
 function resBadge(st,cid){if(!st.res)return"";if(st.res==="p"&&cid[1]==="6")return `<span class="pill g">🎓 ناجح · يتخرّج</span>`;return `<span class="pill ${RES[st.res][1]}">${RES[st.res][0]}</span>`}
 function infoCard(st,c,cid,si,link){const d=due(st,c),pd=paid(st),r=d-pd,l=isLate(st,c),pc=d?Math.min(100,pd/d*100):0;const lp=lastPay(st);
-  const st8=l?`<span class="ibadge r">⚠️ متأخر ${lateMonths(st)} أشهر</span>`:r<=0&&d>0?`<span class="ibadge g">✔ مسدَّد بالكامل</span>`:`<span class="ibadge y">⏳ عليه باقي</span>`;
+  const st8=l?`<span class="ibadge r">⚠️ متأخر ${moTxt(lateMonths(st))}</span>`:r<=0&&d>0?`<span class="ibadge g">✔ مسدَّد بالكامل</span>`:`<span class="ibadge y">⏳ عليه باقي</span>`;
   const f=(ic,k,v,cl)=>`<div class="if ${cl||""}"><div class="ik">${ic} ${k}</div><div class="iv">${v}</div></div>`;
   return `<div class="icard ${l?"late":""}">
     <div class="ihead"><div class="iname">${esc(st.name)}</div>${st8}</div>
@@ -605,7 +614,7 @@ function homeV(){
     <button class="kpi" data-act="go" data-v="staff"><div class="l">الرواتب المدفوعة</div><div class="v r">${money(t.sal)}</div></button>
     <button class="kpi" data-act="go" data-v="exp"><div class="l">المصاريف العامة</div><div class="v r">${money(t.ex)}</div></button>
     <div class="kpi"><div class="l">عدد الطلاب</div><div class="v"><span class="num">${t.n}</span></div></div>
-    <button class="kpi" data-act="go" data-v="late"><div class="l">متأخرون عن التسديد (٤ أشهر)</div><div class="v ${t.late?"r":""}"><span class="num">${t.late}</span></div></button>
+    <button class="kpi" data-act="go" data-v="late"><div class="l">متأخرون عن التسديد (شهرين)</div><div class="v ${t.late?"r":""}"><span class="num">${t.late}</span></div></button>
   </div>
   <div class="nav">
     <button class="navb" data-act="go" data-v="staff" data-k="t"><span class="ic">👨‍🏫</span><span>المدرّسون<small>الأسماء والرواتب</small></span></button>
@@ -614,7 +623,7 @@ function homeV(){
     <button class="navb" data-act="go" data-v="inc"><span class="ic" style="background:var(--goodbg)">📥</span><span>صندوق الوارد<small>أموال من غير الطلاب: تبرعات وغيرها</small></span></button>
     <button class="navb" data-act="go" data-v="exp"><span class="ic">🧾</span><span>المصاريف العامة<small>المبلغ ومن أخذه ولماذا</small></span></button>
     <button class="navb" data-act="go" data-v="cash"><span class="ic">💰</span><span>القاصة العامة للمدرسة<small>الرصيد وكل الداخل والخارج</small></span></button>
-    <button class="navb" data-act="go" data-v="late"><span class="ic" style="background:var(--badbg)">⏰</span><span>المتأخرون<small>٤ أشهر فما فوق بلا تسديد${t.late?` · <b style="color:var(--bad)">${t.late}</b>`:""}</small></span></button>
+    <button class="navb" data-act="go" data-v="late"><span class="ic" style="background:var(--badbg)">⏰</span><span>المتأخرون<small>شهرين فما فوق بلا تسديد${t.late?` · <b style="color:var(--bad)">${t.late}</b>`:""}</small></span></button>
     <button class="navb" data-act="go" data-v="rc"><span class="ic">🗂️</span><span>الوصولات<small>كل الوصولات المحفوظة</small></span></button>
     <button class="navb" data-act="go" data-v="hand"><span class="ic" style="background:#e3ebfb">🤝</span><span>تسليم اليوم للمدير<small>ورقة التسليم وملخص الواتساب</small></span></button>
     <button class="navb" data-act="go" data-v="rep" data-k="d"><span class="ic">📊</span><span>التقارير<small>يومي وشهري وسنوي</small></span></button>
@@ -625,10 +634,10 @@ function homeV(){
   <h2 class="sec">الصفوف <span class="tag">ستة صفوف، لكل صف شعبتان أ و ب · اضغط على الشعبة لتسجيل الطلبة</span></h2>
   <div class="grades">${g}</div>
   ${S.classes.gx&&(S.classes.gx.students||[]).length?(()=>{const x=clsStats("gx");return `<button class="navb" style="width:100%;margin-top:12px" data-act="cls" data-id="gx"><span class="ic">🎓</span><span>الخريجون — ديون سابقة<small>${x.n} خرّيجًا · الباقي عليهم ${fmt(x.rem)} د.ع</small></span></button>`})():""}
-  <div class="foot">الإصدار ${APP_VER} · ${esc(schoolName())} · كل وصل يُرقَّم تلقائيًا · الطالب الذي يمضي عليه ٤ أشهر بلا تسديد يُعلَّم بالأحمر</div>`}
+  <div class="foot">الإصدار ${APP_VER} · ${esc(schoolName())} · كل وصل يُرقَّم تلقائيًا · الطالب الذي يمضي عليه شهران بلا تسديد يُعلَّم بالأحمر</div>`}
 
 function list0(id,c,sts){return sts.map(({s,i})=>{const d=due(s,c),p=paid(s),r=d-p,l=isLate(s,c);
-    return `<button class="stu ${l?"late":""}" data-act="stu" data-i="${i}"><span class="no">🎓</span><span><div class="nm">${esc(s.name)} ${l?`<span class="pill r">متأخر ${lateMonths(s)} أشهر</span>`:""}${r<=0?` <span class="pill g">سدّد دَينه</span>`:""}</div>
+    return `<button class="stu ${l?"late":""}" data-act="stu" data-i="${i}"><span class="no">🎓</span><span><div class="nm">${esc(s.name)} ${l?`<span class="pill r">متأخر ${moTxt(lateMonths(s))}</span>`:""}${r<=0?` <span class="pill g">سدّد دَينه</span>`:""}</div>
       <div class="meta">تخرّج ${esc(s.grad||"")} · دَين سابق ${money(d)} · دفع ${money(p)}</div>${s.phone?`<div class="meta">📞 <span class="num">${esc(s.phone)}</span></div>`:""}</span>
       <span class="rem"><div class="meta">الباقي</div><div class="${r>0?"out":"in"}">${money(Math.max(r,0))}</div></span></button>`}).join("")}
 function gxV(c,st,list){return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">🎓 الخريجون — ديون سابقة</h2></div>
@@ -654,7 +663,7 @@ function clsV(){
     <div class="list">${rl||`<div class="empty">لا يوجد طلاب</div>`}</div>`}
   const list=sts.map(({s,i})=>{const d=due(s,c),p=paid(s),r=d-p,l=isLate(s,c);const pc=d?Math.min(100,p/d*100):0;
     return `<button class="stu ${l?"late":""}" data-act="stu" data-i="${i}"><span class="no num">${i+1}</span>
-      <span><div class="nm">${esc(s.name)}${s.demo?`<span class="demo">مثال</span>`:""} ${l?`<span class="pill r">متأخر ${lateMonths(s)} أشهر</span>`:""}${r<=0&&d>0?` <span class="pill g">مسدَّد بالكامل</span>`:""} ${resBadge(s,id)}</div>
+      <span><div class="nm">${esc(s.name)}${s.demo?`<span class="demo">مثال</span>`:""} ${l?`<span class="pill r">متأخر ${moTxt(lateMonths(s))}</span>`:""}${r<=0&&d>0?` <span class="pill g">مسدَّد بالكامل</span>`:""} ${resBadge(s,id)}</div>
       <div class="meta">دفع ${money(p)} من ${money(d)} · ${live(s.pays).length} دفعات</div><div class="bar"><i style="width:${pc}%"></i></div></span>
       <span class="rem"><div class="meta">الباقي</div><div class="${r>0?"out":"in"}">${money(Math.max(r,0))}</div></span></button>`}).join("");
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">${clsName(id)}</h2>
@@ -1092,19 +1101,29 @@ function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=live(s.pa
 
 function lateList(){const L=[];classIds().forEach(cid=>{const c=getCls(cid);(c.students||[]).forEach((st,si)=>{if(isLate(st,c))L.push({st,cid,si,mo:lateMonths(st),rem:due(st,c)-paid(st),lp:lastPay(st)})})});
   return L.sort((a,b)=>b.mo-a.mo||b.rem-a.rem)}
-function lateV(){const L=lateList();const q=(view.q||"").trim();const R=L.filter(x=>!q||hit(q,x.st.name,x.st.parent,x.st.phone));const tot=L.reduce((s,x)=>s+x.rem,0);
+function lateCls(L,fc){if(!L.length)return"";const G={};L.forEach(x=>{(G[x.cid]=G[x.cid]||[]).push(x)});
+  const ids=classIds().filter(id=>G[id]);
+  const card=id=>{const A=G[id],M={};A.forEach(x=>{M[x.mo]=(M[x.mo]||0)+1});const mx=Math.max(...A.map(x=>x.mo)),rem=A.reduce((s,x)=>s+x.rem,0);
+    return `<button class="lcC ${fc===id?"on":""}" data-act="lateCls" data-c="${id}"><div class="h"><b>${clsName(id)}</b><span class="n"><span class="num">${A.length}</span> متأخر</span></div>
+      <div class="ch">${Object.keys(M).sort((a,b)=>b-a).map(m=>`<span>${moTxt(+m)}: <b class="num">${M[m]}</b></span>`).join("")}</div>
+      <div class="f">أطول تأخير ${moTxt(mx)} · الباقي ${money(rem)}</div></button>`};
+  return `<h3 style="margin:14px 0 6px">🏫 المتأخرون حسب الصفوف <small style="font-weight:600;color:var(--mute)">(اضغط على الصف لترى طلابه فقط)</small></h3>
+  <div class="lcG">${ids.map(card).join("")}</div>
+  ${fc?`<button class="btn ghost" style="width:100%;margin-top:8px" data-act="lateCls" data-c="">↩ اعرض المتأخرين في كل الصفوف (${L.length})</button>`:""}`}
+function lateV(){const L=lateList();const q=(view.q||"").trim(),fc=view.lc||"";const R=L.filter(x=>(!fc||x.cid===fc)&&(!q||hit(q,x.st.name,x.st.parent,x.st.phone)));const tot=L.reduce((s,x)=>s+x.rem,0);
   const rows=R.map(x=>`<button class="stu late" data-act="lateOpen" data-c="${x.cid}" data-i="${x.si}"><span class="no" style="background:var(--badbg);color:var(--bad)"><span class="num">${x.mo}</span></span>
     <span><div class="nm">${esc(x.st.name)}</div><div class="meta">${clsName(x.cid)} · ${x.lp?"آخر تسديد "+dtext(x.lp):"لم يسدّد أي دفعة"}</div>
     ${x.st.phone||x.st.parent?`<div class="meta">ولي الأمر: ${esc(x.st.parent||"")} ${x.st.phone?`· <span class="num">${esc(x.st.phone)}</span>`:""}</div>`:""}</span>
-    <span class="rem">${waSent().includes(x.st.id)?`<div class="meta" style="color:var(--good)">✔ ذُكِّر اليوم</div>`:""}<div class="meta">متأخر ${x.mo} أشهر · الباقي</div><div class="out">${money(x.rem)}</div></span></button>${waNum(x.st.phone)?`<a class="btn wa sm" style="text-decoration:none;text-align:center;margin-top:-4px" target="_blank" rel="noopener" href="${esc(waLink(x.st.phone,remindTxt(x.st,getCls(x.cid),x.cid)))}">💬 ذكّر ولي أمر ${esc(x.st.name)} بالواتساب</a>`:""}`).join("");
+    <span class="rem">${waSent().includes(x.st.id)?`<div class="meta" style="color:var(--good)">✔ ذُكِّر اليوم</div>`:""}<div class="meta">متأخر ${moTxt(x.mo)} · الباقي</div><div class="out">${money(x.rem)}</div></span></button>${waNum(x.st.phone)?`<a class="btn wa sm" style="text-decoration:none;text-align:center;margin-top:-4px" target="_blank" rel="noopener" href="${esc(waLink(x.st.phone,remindTxt(x.st,getCls(x.cid),x.cid)))}">💬 ذكّر ولي أمر ${esc(x.st.name)} بالواتساب</a>`:""}`).join("");
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">⏰ الطلاب المتأخرون</h2></div>
   ${status()}
   <div class="board" style="background:linear-gradient(180deg,#8f2f2a,#6d211d)"><div><div class="l">عدد المتأخرين</div><div class="v ch"><span class="num">${L.length}</span></div></div>
     <div><div class="l">مجموع الباقي عليهم</div><div class="v">${money(tot)}</div></div></div>
-  <div class="hint" style="margin-top:8px">يظهر هنا كل طالب مضى عليه ٤ أشهر أو أكثر من آخر تسديد (أو من يوم تسجيله إذا لم يدفع شيئًا) وما زال عليه مبلغ. الرقم الأحمر = عدد الأشهر. اضغط على الاسم لتسجّل دفعته.</div>
+  ${lateCls(L,fc)}
+  <div class="hint" style="margin-top:8px">يظهر هنا كل طالب مضى عليه شهران أو أكثر من آخر تسديد (أو من يوم تسجيله إذا لم يدفع شيئًا) وما زال عليه مبلغ. الرقم الأحمر = عدد الأشهر. اضغط على الاسم لتسجّل دفعته.</div>
   <div class="row" style="margin-top:10px"><input class="search" id="q" placeholder="ابحث عن اسم…" value="${esc(view.q||"")}">${L.length?`<button class="btn gold" data-act="lateCsv">💾 احفظ القائمة Excel</button>`:""}</div>
   ${(()=>{const W=L.filter(x=>waNum(x.st.phone)),sn=waSent(),left=W.filter(x=>!sn.includes(x.st.id)).length;return W.length?`<button class="btn wa" style="width:100%;margin-top:10px;font-size:17px" data-act="waAll">💬 ذكّر الكل بالواتساب واحدًا واحدًا (${left?"باقي "+left+" من "+W.length:"ذُكِّروا كلهم اليوم ✔"})</button>`:""})()}
-  <div class="list">${rows||`<div class="empty">${q?"لا يوجد اسم مطابق":"✔ لا يوجد طلاب متأخرون. كل الطلاب سدّدوا خلال آخر ٤ أشهر."}</div>`}</div>`}
+  <div class="list">${rows||`<div class="empty">${q?"لا يوجد اسم مطابق":"✔ لا يوجد طلاب متأخرون. كل الطلاب سدّدوا خلال آخر شهرين."}</div>`}</div>`}
 
 function waAll(){const W=lateList().filter(x=>waNum(x.st.phone));if(!W.length)return;const sn=waSent();let i=W.findIndex(x=>!sn.includes(x.st.id));if(i<0)i=0;
   modal("💬 تذكير المتأخرين واحدًا واحدًا",`<div id="waS"></div>`,`<button class="btn ghost" id="waP" type="button">→ السابق</button><button class="btn ghost" id="waN" type="button">تخطَّ ←</button>`);
@@ -1427,7 +1446,8 @@ document.addEventListener("click",e=>{
   if(a==="allRes"){const cc=JSON.parse(JSON.stringify(getCls(view.id)));(cc.students||[]).forEach(st=>{if(d.r)st.res=d.r;else delete st.res});view.keep=1;return put("classes",view.id,cc)}
   if(a==="rollover")return rollover();
   if(a==="lateOpen")return go({v:"stu",id:d.c,i:+d.i});
-  if(a==="lateCsv"){const R=[[schoolName()],["الطلاب المتأخرون ٤ أشهر فما فوق",today()],[],["الاسم","الصف","ولي الأمر","الهاتف","آخر تسديد","أشهر التأخير","الباقي"]];
+  if(a==="lateCls"){view.lc=view.lc===d.c?"":d.c;view.keep=1;render();return}
+  if(a==="lateCsv"){const R=[[schoolName()],["الطلاب المتأخرون شهرين فما فوق",today()],[],["الاسم","الصف","ولي الأمر","الهاتف","آخر تسديد","أشهر التأخير","الباقي"]];
     lateList().forEach(x=>R.push([x.st.name,clsName(x.cid),x.st.parent||"",x.st.phone||"",x.lp||"لم يسدد",x.mo,x.rem]));
     saveFile(new Blob([csv(R)],{type:"text/csv"}),"المتأخرون-"+today()+".csv");return}
   if(a==="repDay"){const t=new Date((view.d||today())+"T12:00:00");t.setDate(t.getDate()+(+d.s));view.d=t.toISOString().slice(0,10);view.keep=1;return render()}
