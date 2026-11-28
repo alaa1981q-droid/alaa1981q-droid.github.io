@@ -423,7 +423,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="31";
+const APP_VER="32";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -689,13 +689,15 @@ function stuV(){
   <h2 class="sec">الدفعات <span class="tag">عشر خانات للتسديد، والباقي يُحسب بعد كل دفعة</span></h2>
   <div class="slots">${slots}</div>`}
 
+const ROLES={t:["معلّم","👨‍🏫"],c:["عامل تنظيف","🧹"],g:["حارس","💂"],d:["سائق","🚌"]};
+function roleOf(p){if((p.kind||"t")==="t")return"t";if(ROLES[p.role])return p.role;const j=p.job||"";return /حارس|حراس/.test(j)?"g":/سائق|سايق|خط/.test(j)?"d":"c"}
 function staffV(){
   const k=view.k||"t";const list=Object.entries(S.staff).filter(([,p])=>(p.kind||"t")===k).sort((a,b)=>a[1].name.localeCompare(b[1].name,"ar"));
   const mons=yearMonths();let monthTot=0,paidTot=0;
   const rows=list.map(([id,p])=>{const pd=salPaid(p)+advOf(p);paidTot+=pd;monthTot+=Number(p.sal||0);
     const cnt=mons.filter(m=>live(p.pays).some(x=>x.m===m)).length;
-    return `<button class="stu" data-act="person" data-id="${esc(id)}"><span class="no">${k==="t"?"👨‍🏫":"🧹"}</span>
-      <span><div class="nm">${esc(p.name)}${p.demo?`<span class="demo">مثال</span>`:""}</div><div class="meta">${esc(p.job||"")} · الراتب الشهري ${money(p.sal||0)}</div>
+    return `<button class="stu" data-act="person" data-id="${esc(id)}"><span class="no">${ROLES[roleOf(p)][1]}</span>
+      <span><div class="nm">${esc(p.name)}${p.demo?`<span class="demo">مثال</span>`:""}</div><div class="meta">${k==="t"?"":ROLES[roleOf(p)][0]+(p.job?" · ":"")}${esc(p.job||"")} · الراتب الشهري ${money(p.sal||0)}</div>
       <div class="bar"><i style="width:${cnt/12*100}%"></i></div></span>
       <span class="rem"><div class="meta">استلم ${cnt} من ١٢ شهرًا</div><div class="out">${money(pd)}</div></span></button>`}).join("");
   return `<div class="top"><button class="back" data-act="go" data-v="home">→ الرئيسية</button><h2 class="title">${k==="t"?"المدرّسون":"العاملون"}</h2></div>
@@ -728,7 +730,7 @@ function personV(){
   return `<div class="top"><button class="back" data-act="go" data-v="staff" data-k="${p.kind||"t"}">→ ${(p.kind||"t")==="t"?"المدرّسون":"العاملون"}</button>
     <h2 class="title">${esc(p.name)}${p.demo?`<span class="demo">مثال</span>`:""}</h2><button class="btn ghost sm" data-act="editPerson">✎ تعديل</button></div>
   ${status()}
-  <div class="board"><div><div class="l">${(p.kind||"t")==="t"?"المادة":"العمل"}</div><div class="v" style="font-size:17px">${esc(p.job||"—")}</div></div>
+  <div class="board"><div><div class="l">${(p.kind||"t")==="t"?"المادة":"العمل"}</div><div class="v" style="font-size:17px">${(p.kind||"t")==="t"?esc(p.job||"—"):ROLES[roleOf(p)][1]+" "+ROLES[roleOf(p)][0]+(p.job?" · "+esc(p.job):"")}</div></div>
     <div><div class="l">الراتب الشهري</div><div class="v ch">${money(p.sal||0)}</div></div>
     <div><div class="l">استلم هذه السنة</div><div class="v">${money(pd)}</div></div>
     <div><div class="l">راتب السنة كاملة (١٢ شهرًا)</div><div class="v">${money((p.sal||0)*12)}</div></div></div>
@@ -912,13 +914,14 @@ function famKashf(){const c=getCls(view.id),s=c.students[view.i];const fam=[{st:
   rows.push(["ولي الأمر",s.parent||"—"],["المطلوب من العائلة",fmt(T)+" د.ع"],["مجموع المدفوع",fmt(P)+" د.ع"],["الباقي على العائلة",fmt(Math.max(T-P,0))+" د.ع"]);
   receipt({kind:"كشف حساب العائلة",no:"—",date:today(),amount:P,rows,lead:"مجموع ما دفعته العائلة حتى اليوم",sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"كشف-عائلة-"+(s.parent||s.name)})}
 
-function personModal(id){const p=id?S.staff[id]:{kind:view.k||"t"};const k=p.kind||"t";
-  modal(id?"تعديل":"إضافة "+(k==="t"?"مدرّس":"عامل"),fld("eN","الاسم الثلاثي",p.name)+
-    `<div class="fld"><label for="eK">النوع</label><select id="eK"><option value="t" ${k==="t"?"selected":""}>مدرّس</option><option value="w" ${k==="w"?"selected":""}>عامل</option></select></div>`+
-    fld("eJ",k==="t"?"المادة التي يدرّسها":"العمل (حارس، منظّف، سائق…)",p.job)+amtField("eS","الراتب الشهري",p.sal)+fld("eT","الهاتف (اختياري)",p.phone,'inputmode="tel"')+`<div class="err" id="er"></div>`,
+function personModal(id){const p=id?S.staff[id]:{kind:view.k||"t"};const k=p.kind||"t";const r=roleOf(p);
+  modal(id?"تعديل":"إضافة "+(k==="t"?"معلّم":"عامل"),fld("eN","الاسم الثلاثي",p.name)+
+    `<div class="fld"><label for="eK">النوع</label><select id="eK">${Object.entries(ROLES).map(([v,x])=>`<option value="${v}" ${r===v?"selected":""}>${x[1]} ${x[0]}</option>`).join("")}</select></div>`+
+    fld("eJ",k==="t"?"المادة التي يدرّسها":"ملاحظة عن عمله (اختياري)",p.job)+amtField("eS","الراتب الشهري",p.sal)+fld("eT","الهاتف (اختياري)",p.phone,'inputmode="tel"')+`<div class="err" id="er"></div>`,
     `<button class="btn" id="ok">احفظ</button>${id?`<button class="btn red" id="dP" type="button">حذف</button>`:""}`);
+  $("#eK").onchange=()=>{const l=document.querySelector('label[for="eJ"]');if(l)l.textContent=$("#eK").value==="t"?"المادة التي يدرّسها":"ملاحظة عن عمله (اختياري)"};
   $("#ok").onclick=()=>{const n=$("#eN").value.trim();if(!n){$("#er").textContent="اكتب الاسم";return}
-    const o=Object.assign({},p,{name:n,kind:$("#eK").value,job:$("#eJ").value.trim(),sal:pnum($("#eS").value),phone:$("#eT").value.trim(),pays:p.pays||[]});delete o.demo;
+    const rv=$("#eK").value;const o=Object.assign({},p,{name:n,kind:rv==="t"?"t":"w",role:rv==="t"?"":rv,job:$("#eJ").value.trim(),sal:pnum($("#eS").value),phone:$("#eT").value.trim(),pays:p.pays||[]});delete o.demo;
     const nid=id||uid();put("staff",nid,o);close();if(!id)go({v:"person",id:nid});toast("حُفظ")};
   if($("#dP"))$("#dP").onclick=()=>ask(`حذف <b>${esc(p.name)}</b>؟ ستُحذف رواتبه المسجّلة ويرجع مبلغها إلى القاصة.`,"احذف",()=>{del("staff",id);go({v:"staff",k})})}
 function salModal(m){const p=S.staff[view.id];const ps=salPaid(p,m);const left=Math.max(salNet(p,m)-ps,0);
@@ -930,7 +933,7 @@ function salModal(m){const p=S.staff[view.id];const ps=salPaid(p,m);const left=M
     if(a>bal&&!$("#ok").dataset.f){$("#er").textContent="المبلغ أكبر من رصيد القاصة. اضغط مرة ثانية للتأكيد.";$("#ok").dataset.f=1;return}
     const x={id:uid(),a,m,d:$("#sD").value||today(),n:nextNo(),note:$("#sNo").value.trim()};const o=JSON.parse(JSON.stringify(p));o.pays=(o.pays||[]).concat(x);put("staff",view.id,o);close();salReceipt(x.id)}}
 function salReceipt(pid,sid,copy){const p=S.staff[sid||view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;const av=advOf(p,x.m),dd=dedOf(p,x.m);
-  receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,voided:!!x.void,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",p.job||"—"],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(av?[["سلفة مخصومة",fmt(av)+" د.ع"]]:[]).concat(dd?[["خصم",fmt(dd)+" د.ع"]]:[]).concat(av||dd?[["صافي الراتب",fmt(salNet(p,x.m))+" د.ع"]]:[]).concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why+" — "+dtext(x.void.d)]]:[]),
+  receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,voided:!!x.void,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",(p.kind||"t")==="t"?(p.job||"—"):ROLES[roleOf(p)][0]+(p.job?" · "+p.job:"")],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(av?[["سلفة مخصومة",fmt(av)+" د.ع"]]:[]).concat(dd?[["خصم",fmt(dd)+" د.ع"]]:[]).concat(av||dd?[["صافي الراتب",fmt(salNet(p,x.m))+" د.ع"]]:[]).concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why+" — "+dtext(x.void.d)]]:[]),
     sign:["توقيع المستلم","توقيع المدير"],copy,file:"راتب-"+x.n+(copy?"-نسخة":""),lead:"استلمتُ من إدارة المدرسة مبلغ راتبي",
     waTo:"للمستلم",waNo:x.void?"":"اكتب رقم هاتفه من «✎ تعديل» في صفحته حتى ترسل له الوصل بالواتساب.",
     wa:x.void?"":waLink(p.phone,`السلام عليكم ${p.name} المحترم\nوصل استلام راتب رقم ${x.n} من ${schoolName()}\nعن شهر: ${mlabel(x.m)}\nالمبلغ المستلم: ${fmt(x.a)} د.ع\nبتاريخ: ${dtext(x.d)}\nشكرًا لجهودكم.`)})}
