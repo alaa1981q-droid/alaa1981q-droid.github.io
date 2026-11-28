@@ -212,6 +212,13 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 .slot.void{opacity:.75;border-top-color:var(--bad)!important;background:repeating-linear-gradient(135deg,var(--paper),var(--paper) 8px,var(--badbg) 8px,var(--badbg) 16px)}
 .slot.void .a{text-decoration:line-through;color:var(--bad)}
 tr.void td{text-decoration:line-through;opacity:.6}
+.adjL{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:10px;margin-top:10px}
+.adjC{background:#fff8e8;border:1px solid #efd9a6;border-radius:14px;padding:10px 12px;box-shadow:inset 0 1px 0 #fff,0 4px 0 #e6cf98,0 8px 14px rgba(24,48,42,.08);display:flex;flex-direction:column;gap:6px}
+.adjC.ded{background:#eef4ff;border-color:#c9d8f2;box-shadow:inset 0 1px 0 #fff,0 4px 0 #c3d3ee,0 8px 14px rgba(24,48,42,.08)}
+.adjC .h{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:16px}.adjC .h small{font-weight:500;color:var(--mut,#5d6f68);font-size:12px}
+.adjC .row{gap:6px;flex-wrap:wrap}.adjC.void{opacity:.7;background:repeating-linear-gradient(135deg,#fff,#fff 8px,var(--badbg) 8px,var(--badbg) 16px)}
+.adjC.void .h span{text-decoration:line-through}.adjC .vtag{color:var(--bad);font-weight:700;font-size:13px}
+.adjQ{display:flex;flex-wrap:wrap;gap:6px;align-items:center;margin-top:6px}
 .kpill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 6px;background:var(--warnbg);color:var(--warn)}
 #pr{display:none}
 .hcard{padding:10px}.hsheet{font-size:13.5px;color:#18302a}.hsheet .hh{display:flex;flex-wrap:wrap;justify-content:space-between;gap:6px;background:#1d3f7a;color:#fff;border-radius:10px;padding:8px 12px;font-weight:700}.hsheet .hh b{font-family:Cairo,sans-serif;font-size:16px}
@@ -714,8 +721,10 @@ function personV(){
   const adj=(p.adj||[]).slice().sort((a,b)=>(b.d||"").localeCompare(a.d||""));
   const adjH=`<h2 class="sec">💸 السلف والخصومات <span class="tag">السلفة تُصرف الآن من القاصة وتُخصم من راتب الشهر المحدد · الخصم يُنقص الراتب فقط</span></h2>
   <div class="row"><button class="btn gold" data-act="addAdj" data-t="adv">＋ سلفة</button><button class="btn ghost" data-act="addAdj" data-t="ded">＋ خصم (غياب أو غيره)</button></div>
-  ${adj.length?`<div class="card" style="margin-top:10px;padding:6px 8px"><div class="tblw"><table class="tbl"><thead><tr><th>النوع</th><th>المبلغ</th><th>التاريخ</th><th>يُخصم من راتب</th><th>ملاحظة</th><th></th></tr></thead><tbody>${adj.map(x=>`<tr class="${x.void?"void":""}"><td><b>${x.t==="adv"?"سلفة":"خصم"}</b>${x.void?" (ملغى)":""}</td><td class="out">${money(x.a)}</td><td>${dshow(x.d)}</td><td>${mlabel(x.m)}</td><td style="min-width:120px">${esc(x.note||"")}</td>
-    <td style="white-space:nowrap">${x.t==="adv"?`<button class="btn ghost sm" data-act="rcAdv" data-x="${esc(x.id)}">🧾</button> `:""}${x.void?"":`<button class="btn ghost sm" data-act="delAdj" data-x="${esc(x.id)}">إلغاء</button>`}</td></tr>`).join("")}</tbody></table></div></div>`:""}`;
+  ${adj.length?`<div class="adjL">${adj.map(x=>`<div class="adjC ${x.void?"void":""} ${x.t}"><div class="h"><b>${x.t==="adv"?"💸 سلفة":"➖ خصم"}${x.n?` <small>رقم ${esc(x.n)}</small>`:""}</b><span class="out">${money(x.a)}</span></div>
+    <div class="hint">${x.t==="adv"?"صُرفت "+dshow(x.d)+" · ":""}تُخصم من راتب <b>${mlabel(x.m)}</b>${x.note?" · "+esc(x.note):""}${x.ed?" · عُدّلت "+dshow(x.ed):""}</div>
+    ${x.void?`<div class="vtag">🚫 ملغاة${x.void.why?" — "+esc(x.void.why):""} · لا تُخصم من الراتب${x.t==="adv"?" ورجع مبلغها للقاصة":""}</div>`:""}
+    <div class="row">${x.t==="adv"?`<button class="btn ghost sm" data-act="rcAdv" data-x="${esc(x.id)}">🧾 الوصل</button>`:""}${x.void?"":`<button class="btn ghost sm" data-act="editAdj" data-x="${esc(x.id)}">✏️ تعديل</button><button class="btn red sm" data-act="delAdj" data-x="${esc(x.id)}">🗑️ امسح ${x.t==="adv"?"السلفة":"الخصم"}</button>`}</div></div>`).join("")}</div>`:""}`;
   return `<div class="top"><button class="back" data-act="go" data-v="staff" data-k="${p.kind||"t"}">→ ${(p.kind||"t")==="t"?"المدرّسون":"العاملون"}</button>
     <h2 class="title">${esc(p.name)}${p.demo?`<span class="demo">مثال</span>`:""}</h2><button class="btn ghost sm" data-act="editPerson">✎ تعديل</button></div>
   ${status()}
@@ -838,6 +847,7 @@ function modal(title,body,foot,wide){
   const L=$("#layer");L.innerHTML=`<div class="ov" id="ov"><div class="mdl ${wide?"wide":""}" role="dialog" aria-modal="true" aria-label="${esc(title)}"><h3>${esc(title)}</h3><div class="bd">${body}</div><div class="ft">${foot}<button class="btn ghost" data-act="close" type="button">إغلاق</button></div></div></div>`;
   const f=L.querySelector("input,select,textarea");if(f)setTimeout(()=>f.focus(),30);
   mclose=()=>{L.innerHTML="";mclose=null}}
+function afterPB(f,k){k=k||0;if(pendingBack&&k<60)return setTimeout(()=>afterPB(f,k+1),50);f()}
 function close(){if(!mclose)return;mclose();if(/-m$/.test(location.hash)){pendingBack=true;backT=setTimeout(flushBack,600);history.back()}}
 function ask(text,yesLabel,fn){modal("تأكيد",`<div>${text}</div>`,`<button class="btn red" id="yes" type="button">${esc(yesLabel)}</button>`);$("#yes").onclick=()=>{close();fn()}}
 function toast(t){const d=document.createElement("div");d.className="toast";d.textContent=t;document.body.appendChild(d);setTimeout(()=>d.remove(),2600)}
@@ -911,7 +921,9 @@ function personModal(id){const p=id?S.staff[id]:{kind:view.k||"t"};const k=p.kin
   if($("#dP"))$("#dP").onclick=()=>ask(`حذف <b>${esc(p.name)}</b>؟ ستُحذف رواتبه المسجّلة ويرجع مبلغها إلى القاصة.`,"احذف",()=>{del("staff",id);go({v:"staff",k})})}
 function salModal(m){const p=S.staff[view.id];const ps=salPaid(p,m);const left=Math.max(salNet(p,m)-ps,0);
   const bal=totals().bal;
-  modal("راتب "+mlabel(m)+" — "+p.name,`<div class="hint">رصيد القاصة العامة: <b>${fmt(bal)}</b> د.ع</div>${advOf(p,m)||dedOf(p,m)?`<div class="note">الراتب ${fmt(p.sal)}${advOf(p,m)?" − سلفة "+fmt(advOf(p,m)):""}${dedOf(p,m)?" − خصم "+fmt(dedOf(p,m)):""} = الصافي ${fmt(salNet(p,m))} د.ع</div>`:""}`+amtField("sA","المبلغ المسلَّم",left)+dateFld("sD")+fld("sNo","ملاحظة (اختياري)","")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">سلّم الراتب وأخرج الوصل</button>`);
+  modal("راتب "+mlabel(m)+" — "+p.name,`<div class="hint">رصيد القاصة العامة: <b>${fmt(bal)}</b> د.ع</div>${advOf(p,m)||dedOf(p,m)?`<div class="note">الراتب ${fmt(p.sal)}${advOf(p,m)?" − سلفة "+fmt(advOf(p,m)):""}${dedOf(p,m)?" − خصم "+fmt(dedOf(p,m)):""} = الصافي ${fmt(salNet(p,m))} د.ع</div>`:""}${live(p.adj).filter(x=>x.m===m).map(x=>`<div class="adjQ"><span>${x.t==="adv"?"💸 سلفة":"➖ خصم"} ${fmt(x.a)}${x.note?" ("+esc(x.note)+")":""}</span><button class="btn ghost sm" type="button" data-qe="${esc(x.id)}">✏️ تعديل</button><button class="btn red sm" type="button" data-qd="${esc(x.id)}">🗑️ امسح</button></div>`).join("")}`+amtField("sA","المبلغ المسلَّم",left)+dateFld("sD")+fld("sNo","ملاحظة (اختياري)","")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">سلّم الراتب وأخرج الوصل</button>`);
+  document.querySelectorAll("[data-qe]").forEach(b=>b.onclick=()=>{close();afterPB(()=>adjModal(null,b.dataset.qe))});
+  document.querySelectorAll("[data-qd]").forEach(b=>b.onclick=()=>{close();afterPB(()=>delAdj(b.dataset.qd))});
   $("#ok").onclick=()=>{const a=pnum($("#sA").value);if(!a){$("#er").textContent="اكتب المبلغ";return}
     if(a>bal&&!$("#ok").dataset.f){$("#er").textContent="المبلغ أكبر من رصيد القاصة. اضغط مرة ثانية للتأكيد.";$("#ok").dataset.f=1;return}
     const x={id:uid(),a,m,d:$("#sD").value||today(),n:nextNo(),note:$("#sNo").value.trim()};const o=JSON.parse(JSON.stringify(p));o.pays=(o.pays||[]).concat(x);put("staff",view.id,o);close();salReceipt(x.id)}}
@@ -919,19 +931,21 @@ function salReceipt(pid,sid,copy){const p=S.staff[sid||view.id];const x=(p.pays|
   receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,voided:!!x.void,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",p.job||"—"],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(av?[["سلفة مخصومة",fmt(av)+" د.ع"]]:[]).concat(dd?[["خصم",fmt(dd)+" د.ع"]]:[]).concat(av||dd?[["صافي الراتب",fmt(salNet(p,x.m))+" د.ع"]]:[]).concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why+" — "+dtext(x.void.d)]]:[]),
     sign:["توقيع المستلم","توقيع المدير"],copy,file:"راتب-"+x.n+(copy?"-نسخة":""),lead:"استلمتُ من إدارة المدرسة مبلغ راتبي"})}
 function delSal(pid){voidAsk("إلغاء وصل راتب",v=>{const o=JSON.parse(JSON.stringify(S.staff[view.id]));const x=o.pays.find(y=>y.id===pid);if(x)x.void=v;put("staff",view.id,o);voidShow(()=>salReceipt(pid))})}
-function adjModal(t){const p=S.staff[view.id];const ms=yearMonths();const cur=today().slice(0,7);const def=ms.includes(cur)?cur:ms[0];
-  modal((t==="adv"?"سلفة لـ ":"خصم من راتب ")+p.name,(t==="adv"?`<div class="hint">السلفة تُصرف الآن من القاصة العامة، وتُخصم تلقائيًا من راتب الشهر الذي تختاره.</div>`:`<div class="hint">الخصم لا يُخرج مالًا من القاصة، بل يُنقص راتب الشهر الذي تختاره.</div>`)+
-    amtField("jA","المبلغ","")+`<div class="fld"><label for="jM">يُخصم من راتب شهر</label><select id="jM">${ms.map(m=>`<option value="${m}" ${m===def?"selected":""}>${mlabel(m)}</option>`).join("")}</select></div>`+
-    (t==="adv"?dateFld("jD"):"")+fld("jN",t==="adv"?"ملاحظة (اختياري)":"السبب (مثل: غياب 3 أيام)","")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">${t==="adv"?"اصرف السلفة وأخرج الوصل":"سجّل الخصم"}</button>`);
+function adjModal(t,eid){const p=S.staff[view.id];const ms=yearMonths();const cur=today().slice(0,7);const E=eid?(p.adj||[]).find(y=>y.id===eid):null;if(E)t=E.t;const def=E?E.m:ms.includes(cur)?cur:ms[0];
+  modal((E?"تعديل ":"")+(t==="adv"?"سلفة لـ ":"خصم من راتب ")+p.name,(E?`<div class="note">غيّر ما تريد ثم اضغط «احفظ التعديل». إذا كانت السلفة غلطًا من الأساس استعمل زر «🗑️ امسح السلفة».</div>`:"")+(t==="adv"?`<div class="hint">السلفة تُصرف الآن من القاصة العامة، وتُخصم تلقائيًا من راتب الشهر الذي تختاره.</div>`:`<div class="hint">الخصم لا يُخرج مالًا من القاصة، بل يُنقص راتب الشهر الذي تختاره.</div>`)+
+    amtField("jA","المبلغ",E?E.a:"")+`<div class="fld"><label for="jM">يُخصم من راتب شهر</label><select id="jM">${ms.map(m=>`<option value="${m}" ${m===def?"selected":""}>${mlabel(m)}</option>`).join("")}</select></div>`+
+    (t==="adv"?dateFld("jD",E&&E.d):"")+fld("jN",t==="adv"?"ملاحظة (اختياري)":"السبب (مثل: غياب 3 أيام)",E?E.note:"")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">${E?"احفظ التعديل":t==="adv"?"اصرف السلفة وأخرج الوصل":"سجّل الخصم"}</button>`);
   $("#ok").onclick=()=>{const a=pnum($("#jA").value);if(!a){$("#er").textContent="اكتب المبلغ";return}
+    if(E){const o=JSON.parse(JSON.stringify(S.staff[view.id]));const y=o.adj.find(q=>q.id===eid);Object.assign(y,{a,m:$("#jM").value,note:$("#jN").value.trim(),ed:today()});if(t==="adv")y.d=$("#jD").value||y.d;
+      put("staff",view.id,o);close();if(t==="adv")advReceipt(eid,null,1);else toast("عُدّل الخصم");return}
     const x={id:uid(),t,a,m:$("#jM").value,d:t==="adv"?($("#jD").value||today()):today(),note:$("#jN").value.trim()};if(t==="adv")x.n=nextNo();
     const o=JSON.parse(JSON.stringify(p));o.adj=(o.adj||[]).concat(x);put("staff",view.id,o);close();if(t==="adv")advReceipt(x.id);else toast("سُجّل الخصم")}}
 function advReceipt(xid,sid,copy){const p=S.staff[sid||view.id];const x=(p.adj||[]).find(y=>y.id===xid);if(!x)return;
-  receipt({kind:"وصل استلام سلفة",no:x.n,date:x.d,amount:x.a,voided:!!x.void,copy,rows:[["الاسم",p.name],["تُخصم من راتب شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why]]:[]),
+  receipt({kind:"وصل استلام سلفة",no:x.n,date:x.d,amount:x.a,voided:!!x.void,copy,rows:[["الاسم",p.name],["تُخصم من راتب شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.ed?[["عُدّلت في",dtext(x.ed)]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why]]:[]),
     sign:["توقيع المستلم","توقيع المدير"],file:"سلفة-"+x.n,lead:"استلمتُ من القاصة العامة للمدرسة سلفة مبلغها"})}
 function delAdj(xid){const p=S.staff[view.id];const x=(p.adj||[]).find(y=>y.id===xid);if(!x)return;
-  if(x.t==="ded")return ask("إلغاء هذا الخصم؟ يرجع راتب الشهر كما كان.","ألغِ الخصم",()=>{const o=JSON.parse(JSON.stringify(p));o.adj=o.adj.filter(y=>y.id!==xid);put("staff",view.id,o)});
-  voidAsk("إلغاء وصل سلفة",v=>{const o=JSON.parse(JSON.stringify(p));o.adj.find(y=>y.id===xid).void=v;put("staff",view.id,o);voidShow(()=>advReceipt(xid))})}
+  if(x.t==="ded")return ask("مسح هذا الخصم؟ يرجع راتب الشهر كما كان.","امسح الخصم",()=>{const o=JSON.parse(JSON.stringify(p));o.adj=o.adj.filter(y=>y.id!==xid);put("staff",view.id,o)});
+  voidAsk("مسح سلفة "+fmt(x.a)+" د.ع — "+p.name,v=>{const o=JSON.parse(JSON.stringify(p));o.adj.find(y=>y.id===xid).void=v;put("staff",view.id,o);voidShow(()=>advReceipt(xid))})}
 
 function expModal(id){const e=id?S.expenses[id]:{};const bal=totals().bal+(id?Number(e.a):0);
   modal(id?"تعديل مصروف":"مصروف جديد",`<div class="hint">يُخصم من القاصة العامة · الرصيد: <b>${fmt(bal)}</b> د.ع</div>`+amtField("xA","المبلغ المسحوب",e.a)+
@@ -1300,6 +1314,7 @@ document.addEventListener("click",e=>{
   if(a==="famK")return famKashf();
   if(a==="addAdj")return adjModal(d.t);
   if(a==="delAdj")return delAdj(d.x);
+  if(a==="editAdj")return adjModal(null,d.x);
   if(a==="rcAdv")return advReceipt(d.x,null,1);
   if(a==="gradOpen"){const g=(window.__gr||[])[+d.i];if(g)gradOpen(g);return}
   if(a==="setRes")return setRes(+d.i,d.r);
