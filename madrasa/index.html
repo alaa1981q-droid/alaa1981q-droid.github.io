@@ -423,7 +423,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="32";
+const APP_VER="33";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -549,7 +549,7 @@ function infoCard(st,c,cid,si,link){const d=due(st,c),pd=paid(st),r=d-pd,l=isLat
     ${st.note?`<div class="hint" style="margin-top:6px">📝 ${esc(st.note)}</div>`:""}
     ${(()=>{const sb=sibs(st);return sb.length?`<div class="note" style="margin-top:8px;background:var(--goodbg);color:var(--good)">👨‍👩‍👦 إخوته في المدرسة: ${sb.map(x=>`<button class="btn ghost sm" data-act="lateOpen" data-c="${x.cid}" data-i="${x.si}">${esc(x.st.name)} · ${clsName(x.cid)}</button>`).join(" ")} ${link?"":`<button class="btn sm" data-act="famK">📋 كشف حساب العائلة</button>`}</div>`:""})()}
     ${r>0&&waNum(st.phone)?`<a class="btn wa" style="display:block;text-align:center;margin-top:8px;text-decoration:none" target="_blank" rel="noopener" href="${esc(waLink(st.phone,remindTxt(st,c,cid)))}">💬 ذكّر ولي الأمر بالواتساب (الباقي ${fmt(r)} د.ع)</a>`:""}
-    ${st.prev?`<div class="note" style="margin-top:8px">📌 القسط = قسط ${clsName(cid)} ${money(dueQ(st,c)-Number(st.prev))} ＋ مطلوب من العام الماضي ${money(st.prev)} = <b>${money(dueQ(st,c))}</b></div>`:""}
+    ${st.prev?`<div class="note" style="margin-top:8px">📌 القسط = قسط ${clsName(cid)} ${money(dueQ(st,c)-Number(st.prev))} ＋ ديون سابقة ${money(st.prev)} = <b>${money(dueQ(st,c))}</b></div>`:""}
     ${st.res?`<div style="margin-top:8px">نتيجة آخر السنة: ${resBadge(st,cid)}</div>`:""}
     <div class="ibar"><i style="width:${pc}%"></i></div><div class="isub" style="text-align:center">سدّد ${Math.round(pc)}٪ من القسط</div>
     ${link?`<button class="btn" style="width:100%;margin-top:10px" data-act="lateOpen" data-c="${cid}" data-i="${si}">افتح صفحة الطالب ودفعاته ←</button>`:""}
@@ -866,6 +866,7 @@ function feeModal(){const c=getCls(view.id);const g=view.id.slice(0,2);
 function stuModal(i){const c=getCls(view.id);const s=i!=null?c.students[i]:{};const edit=i!=null;
   modal(edit?"تعديل بيانات الطالب":"طالب جديد في "+clsName(view.id),
     fld("sN","اسم الطالب الثلاثي",s.name,'autocomplete="off"')+fld("sP","اسم ولي الأمر",s.parent)+fld("sT","هاتف ولي الأمر",s.phone,'inputmode="tel"')+
+    amtField("sPv","📌 ديون سابقة عليه (من سنوات قبل التطبيق) — اتركه فارغًا إذا ما عليه شي",s.prev,"تُضاف إلى قسطه، وتظهر في صفحته وكشف حسابه.")+
     amtField("sB","🚌 أجور الخط (النقل) السنوية — اتركه فارغًا إذا لا يركب الخط",s.bus)+
     `<div class="fld"><label for="sD2">تاريخ الميلاد (اختياري)</label><input id="sD2" type="date" value="${esc(s.dob||"")}"></div>`+
     fld("sA2","العنوان (اختياري)",s.addr)+fld("sNt","ملاحظات (اختياري)",s.note)+
@@ -874,7 +875,7 @@ function stuModal(i){const c=getCls(view.id);const s=i!=null?c.students[i]:{};co
     `<button class="btn" id="ok">${edit?"احفظ":"أضف الطالب"}</button>${edit?`<button class="btn red" id="dS" type="button">حذف الطالب</button>`:""}${edit?"":`<button class="btn ghost" id="ok2" type="button">أضف وابدأ بالتالي</button>`}`);
   const save=(again)=>{const n=$("#sN").value.trim();if(!n){$("#er").textContent="اكتب اسم الطالب";return}
     const cc=JSON.parse(JSON.stringify(c));cc.students=cc.students||[];const fv=$("#sF").value.trim();
-    const o=Object.assign({},edit?cc.students[i]:{id:uid(),pays:[],reg:today()},{name:n,parent:$("#sP").value.trim(),phone:$("#sT").value.trim(),fee:fv?pnum(fv):null,bus:pnum($("#sB").value)||0,dob:$("#sD2").value||"",addr:$("#sA2").value.trim(),note:$("#sNt").value.trim()});
+    const o=Object.assign({},edit?cc.students[i]:{id:uid(),pays:[],reg:today()},{name:n,parent:$("#sP").value.trim(),phone:$("#sT").value.trim(),fee:fv?pnum(fv):null,prev:pnum($("#sPv").value)||0,bus:pnum($("#sB").value)||0,dob:$("#sD2").value||"",addr:$("#sA2").value.trim(),note:$("#sNt").value.trim()});
     if(o.demo&&edit)delete o.demo;
     const mv=edit?$("#sMv").value:view.id;
     if(edit&&mv!==view.id){cc.students.splice(i,1);put("classes",view.id,cc);const t=JSON.parse(JSON.stringify(getCls(mv)));t.students=t.students||[];t.students.push(o);put("classes",mv,t);close();go({v:"cls",id:mv});toast("نُقل الطالب");return}
@@ -1055,7 +1056,7 @@ function lockScreen(){const p=pinGet();if(!p)return;
 
 function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=live(s.pays).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);const d=due(s,c),p=paid(s);
   const rows=[["اسم الطالب",s.name],["الصف والشعبة",clsName(view.id)],["المبلغ الكلي",fmt(d)+" د.ع"]];
-  if(s.prev)rows.push(["منه مطلوب من العام الماضي",fmt(s.prev)+" د.ع"]);
+  if(s.prev)rows.push(["منه ديون سابقة",fmt(s.prev)+" د.ع"]);
   if(dueB(s))rows.push(["منه أجور الخط",fmt(dueB(s))+" د.ع"]);(s.extra||[]).forEach(x=>rows.push(["منه "+x.k,fmt(x.a)+" د.ع"]));
   ps.forEach((x,i)=>rows.push(["الدفعة "+(i+1),fmt(x.a)+" د.ع — "+dtext(x.d)+" — وصل رقم "+(x.n||"-")+(x.k&&x.k!=="q"?" — "+KN[x.k]:"")]));
   if(!ps.length)rows.push(["الدفعات","لم يسدّد أي دفعة بعد"]);
@@ -1161,8 +1162,10 @@ function allReceipts(){const r=[];
   return r.sort((a,b)=>(b.n||0)-(a.n||0)||(b.d||"").localeCompare(a.d||""))}
 function openRc(r){if(r.t==="wr")return incReceipt(r.id,1);if(r.t==="st")stuReceipt(r.pid,r.cid,r.si,1);else if(r.adv)advReceipt(r.pid,r.sid,1);else if(r.t==="sal")salReceipt(r.pid,r.sid,1);else expReceipt(r.id,1)}
 const RT={st:["أقساط","in"],wr:["وارد","in"],sal:["رواتب","out"],exp:["مصاريف","out"]};
-function rcV(){const f=view.f||"",q=(view.q||"").trim();
-  const all=allReceipts();const L=all.filter(r=>(!f||r.t===f)&&(!q||String(r.n)===toEn(q).trim()||hit(q,r.name,r.sub)));window.__rc=L;
+function rcV(){const f=view.f||"",q=(view.q||"").trim();const qn=toEn(q).replace(/\s/g,"");const isN=/^\d+$/.test(qn);
+  const all=allReceipts();const L=isN?all.filter(r=>String(r.n)===String(+qn)):all.filter(r=>(!f||r.t===f)&&(!q||hit(q,r.name,r.sub)));window.__rc=L;
+  const big=isN&&L.length?L.map((r,i)=>`<div class="note" style="margin:10px 0;background:${r.v?"var(--badbg)":"var(--goodbg)"};color:${r.v?"var(--bad)":"var(--good)"}">${r.v?"🚫 هذا الوصل <b>ملغى</b>"+(r.vw?" — "+esc(r.vw):""):"✅ الوصل موجود ومسجَّل في التطبيق"}<br><b>${esc(r.name)}</b> · ${esc(r.sub)} · ${dtext(r.d)} · <b>${money(r.a)}</b>
+    <button class="btn gold" style="display:block;width:100%;margin-top:8px" data-act="openRc" data-i="${i}">🧾 افتح الوصل رقم ${r.n}</button></div>`).join(""):isN?`<div class="note" style="margin:10px 0;background:var(--badbg);color:var(--bad);font-weight:700">⚠️ لا يوجد وصل بالرقم ${esc(qn)} في هذه السنة. إذا جاب أحد وصل بهذا الرقم فهو غير مسجَّل بالتطبيق.</div>`:"";
   const rows=L.slice(0,view.all?L.length:60).map((r,i)=>`<button class="stu" data-act="openRc" data-i="${i}"><span class="no num" style="font-size:12px">${r.n||"-"}</span>
     <span><div class="nm">${esc(r.name)}</div><div class="meta">${esc(r.sub)} · ${dtext(r.d)}</div></span>
     <span class="rem"><div class="meta">${r.v?"<b style='color:var(--bad)'>ملغى</b>":r.t==="st"||r.t==="wr"?"قبض":"صرف"}</div><div class="${RT[r.t][1]}" style="${r.v?"text-decoration:line-through":""}">${money(r.a)}</div></span></button>`).join("");
@@ -1170,8 +1173,8 @@ function rcV(){const f=view.f||"",q=(view.q||"").trim();
   ${status()}
   <div class="hint">كل وصل يُسجَّل هنا تلقائيًا. إذا أضاع أحدهم وصله، ابحث عن اسمه واضغط على الوصل: يطلع من جديد مختومًا «نسخة مكررة» فتحفظه أو ترسله له.</div>
   <div class="tabs"><button class="tab ${!f?"on":""}" data-act="rcF" data-f="">الكل (${all.length})</button>${Object.entries(RT).map(([k,v])=>`<button class="tab ${f===k?"on":""}" data-act="rcF" data-f="${k}">${v[0]} (${all.filter(r=>r.t===k).length})</button>`).join("")}</div>
-  <input class="search" id="q" style="width:100%" placeholder="ابحث باسم الطالب أو المدرّس أو رقم الوصل…" value="${esc(view.q||"")}">
-  <div class="list">${rows||`<div class="empty">${q?"لا يوجد وصل مطابق":"لا توجد وصولات بعد. كل دفعة أو راتب أو مصروف تسجّله يطلع وصله هنا."}</div>`}</div>
+  <input class="search" id="q" style="width:100%" placeholder="🔎 اكتب رقم الوصل فقط، أو اسم الطالب أو المدرّس…" value="${esc(view.q||"")}">
+  ${big}<div class="list" ${isN?"hidden":""}>${rows||`<div class="empty">${q?"لا يوجد وصل مطابق":"لا توجد وصولات بعد. كل دفعة أو راتب أو مصروف تسجّله يطلع وصله هنا."}</div>`}</div>
   ${L.length>60&&!view.all?`<div class="row" style="margin-top:10px"><button class="btn ghost" data-act="allMv">اعرض كل الوصولات (${L.length})</button></div>`:""}`}
 
 /* ---------- daily handover to the manager ---------- */
