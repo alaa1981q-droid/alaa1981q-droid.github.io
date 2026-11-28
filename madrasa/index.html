@@ -171,6 +171,7 @@ h2.sec .tag{font-family:var(--fb);font-size:13px;font-weight:600;color:var(--mut
 .words{font-size:13px;color:var(--good);font-weight:600}
 .err{color:var(--bad);font-weight:700;font-size:13.5px}
 .rcpt{width:100%;border-radius:12px;border:1px solid var(--line)}
+.rc2{display:grid;grid-template-columns:1fr 1fr;gap:8px}.rc2 .t{font-size:12.5px;font-weight:700;text-align:center;margin-bottom:3px}.rc2 .t.c{color:#1f5240}.rc2 .t.s{color:#1d3f7a}
 .toast{position:fixed;bottom:calc(18px + env(safe-area-inset-bottom,0px));left:50%;transform:translateX(-50%);background:var(--ink);color:var(--paper);padding:10px 18px;border-radius:12px;font-weight:700;z-index:60;box-shadow:var(--shadow)}
 .note{background:var(--warnbg);color:var(--warn);border-radius:12px;padding:8px 12px;font-size:13.5px;font-weight:600;margin-top:12px}
 .empty{color:var(--mute);text-align:center;padding:26px 10px}
@@ -207,6 +208,11 @@ tr.void td{text-decoration:line-through;opacity:.6}
 .kpill{display:inline-block;font-size:11.5px;font-weight:700;border-radius:6px;padding:0 6px;background:var(--warnbg);color:var(--warn)}
 #pr{display:none}
 @media print{html.printimg body>*:not(#pr){display:none!important}html.printimg #pr{display:block!important}#pr img{width:100%;max-width:190mm;display:block;margin:0 auto}@page{margin:10mm}
+  html.printimg,html.printimg body{background:#fff!important;padding:0!important;margin:0!important;min-height:0!important;height:auto!important}
+  #pr.q4{page:rq}@page rq{size:A4 portrait;margin:0}
+  #pr.q4 .sh{width:210mm;height:296mm;display:grid!important;grid-template-columns:105mm 105mm;grid-template-rows:148mm 147mm;overflow:hidden}
+  #pr.q4 .q{box-sizing:border-box;padding:5mm;border:.3mm dashed #999;display:flex;align-items:center;justify-content:center;overflow:hidden}
+  #pr.q4 .q img{max-width:100%;max-height:100%;width:auto;height:auto;margin:0;object-fit:contain}
   html.printrep body{background:#fff!important;padding:0!important}
   html.printrep #layer,html.printrep .fback,html.printrep .toast,html.printrep .top,html.printrep .tabs,html.printrep .note,html.printrep .noprint,html.printrep button,html.printrep select,html.printrep input,html.printrep .fld,html.printrep .cpill{display:none!important}
   html.printrep .phead{display:block!important}
@@ -395,7 +401,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="22";
+const APP_VER="23";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -744,7 +750,7 @@ function incModal(id){const e=id?S.income[id]:{};
     const o=Object.assign({},e,{a,d:$("#wD").value||today(),from:f,who:$("#wW").value.trim(),rcv:$("#wR").value.trim(),note:$("#wN").value.trim()});if(!o.n)o.n=nextNo();const nid=id||uid();put("income",nid,o);close();if(!id)incReceipt(nid);else toast("حُفظ")};
   if($("#dW"))$("#dW").onclick=()=>{close();setTimeout(()=>voidAsk("إلغاء وصل وارد",v=>{const o=JSON.parse(JSON.stringify(S.income[id]));o.void=v;put("income",id,o)}),80)}}
 function incReceipt(id,copy){const e=S.income[id];if(!e)return;
-  receipt({kind:"وصل قبض وارد",no:e.n,date:e.d,amount:e.a,voided:!!e.void,copy,rows:[["من أين جاء",e.from||"—"]].concat(e.who?[["سلّمه",e.who]]:[]).concat(e.rcv?[["استلمه",e.rcv]]:[]).concat(e.note?[["الغرض / ملاحظة",e.note]]:[]).concat([["يُضاف إلى","القاصة العامة للمدرسة"]]).concat(e.void?[["سبب الإلغاء",e.void.why]]:[]),
+  receipt({kind:"وصل قبض وارد",who:"نسخة المسلِّم",no:e.n,date:e.d,amount:e.a,voided:!!e.void,copy,rows:[["من أين جاء",e.from||"—"]].concat(e.who?[["سلّمه",e.who]]:[]).concat(e.rcv?[["استلمه",e.rcv]]:[]).concat(e.note?[["الغرض / ملاحظة",e.note]]:[]).concat([["يُضاف إلى","القاصة العامة للمدرسة"]]).concat(e.void?[["سبب الإلغاء",e.void.why]]:[]),
     sign:["توقيع المسلِّم","توقيع المستلم"],file:"وارد-"+e.n+(copy?"-نسخة":""),lead:"استلمت إدارة المدرسة مبلغًا واردًا قدره"})}
 function cashV(){
   const t=totals();
@@ -863,7 +869,7 @@ function stuReceipt(pid,cid,si,copy){cid=cid||view.id;si=si==null?view.i:si;cons
   if(k!=="q"||dueB(s)||dueX(s))rows.push(["الباقي الكلي",fmt(Math.max(after,0))+" د.ع"]);
   if(p.note)rows.push(["ملاحظة",p.note]);if(p.void)rows.push(["سبب الإلغاء",(p.void.why||"—")+" — "+dtext(p.void.d)]);
   receipt({kind,no:p.n,date:p.d,amount:p.a,rows,voided:!!p.void,
-    sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"وصل-"+p.n+(copy?"-نسخة":""),copy,wa:p.void?"":waLink(s.phone,`السلام عليكم، وصل رقم ${p.n} من ${schoolName()}\nالطالب/ة: ${s.name}\nالمبلغ المدفوع: ${fmt(p.a)} د.ع (${KN[k]})\nالباقي عليه: ${fmt(Math.max(after,0))} د.ع\nشكرًا لكم.`)})}
+    who:"نسخة ولي الأمر",sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"وصل-"+p.n+(copy?"-نسخة":""),copy,wa:p.void?"":waLink(s.phone,`السلام عليكم، وصل رقم ${p.n} من ${schoolName()}\nالطالب/ة: ${s.name}\nالمبلغ المدفوع: ${fmt(p.a)} د.ع (${KN[k]})\nالباقي عليه: ${fmt(Math.max(after,0))} د.ع\nشكرًا لكم.`)})}
 function voidAsk(title,fn){modal(title,`<div class="hint">الوصل لا يُحذف، بل يبقى في السجل مكتوبًا عليه «ملغى» ولا يُحسب في الحسابات. اكتب سبب الإلغاء.</div>`+fld("vW","سبب الإلغاء","")+`<div class="err" id="er"></div>`,`<button class="btn red" id="ok">ألغِ الوصل</button>`);
   $("#ok").onclick=()=>{const w=$("#vW").value.trim();if(!w){$("#er").textContent="اكتب سبب الإلغاء";return}close();fn({d:today(),why:w});toast("أُلغي الوصل")}}
 function delPay(pid){voidAsk("إلغاء وصل دفعة",v=>{const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[view.i];const x=(st.pays||[]).find(y=>y.id===pid);if(x)x.void=v;put("classes",view.id,cc)})}
@@ -922,50 +928,63 @@ function expReceipt(id,copy){const e=S.expenses[id];
 
 /* ---------- receipt image ---------- */
 function wrapLines(ctx,text,max){const w=String(text).split(/\s+/);const L=[];let cur="";w.forEach(x=>{const t=cur?cur+" "+x:x;if(ctx.measureText(t).width>max&&cur){L.push(cur);cur=x}else cur=t});if(cur)L.push(cur);return L.length?L:[""]}
-async function receipt(o){
-  try{await document.fonts.ready}catch(e){}
-  for(let k=0;pendingBack&&k<40;k++)await new Promise(r=>setTimeout(r,50));
-  const W=1000,F="'IBM Plex Sans Arabic',Tahoma,sans-serif",FD="'Cairo','IBM Plex Sans Arabic',sans-serif";
+const RTH={c:{m:"#1f5240",bg:"#fffdf7",lt:"#d6e9df",ab:"#e2f4ea",ac:"#1d8a55"},s:{m:"#1d3f7a",bg:"#f5f8ff",lt:"#d5e0f5",ab:"#e3ebfb",ac:"#2456a8"}};
+function drawR(o,tk,lab,W){
+  const T=RTH[tk],F="'IBM Plex Sans Arabic',Tahoma,sans-serif",FD="'Cairo','IBM Plex Sans Arabic',sans-serif";
   const cv=document.createElement("canvas");const ctx=cv.getContext("2d");
+  const VX=W-330,VW=W-440,LB=lab?52:0;
   ctx.font="500 26px "+F;
-  const rows=o.rows.map(([k,v])=>({k,v:wrapLines(ctx,v,560)}));
-  const H=400+rows.reduce((s,r)=>s+r.v.length*40+14,0)+260;
+  const rows=o.rows.map(([k,v])=>({k,v:wrapLines(ctx,v,VW)}));
+  const H=400+LB+rows.reduce((s,r)=>s+r.v.length*40+14,0)+260;
   cv.width=W;cv.height=H;ctx.direction="rtl";
-  ctx.fillStyle="#fffdf7";ctx.fillRect(0,0,W,H);
-  ctx.strokeStyle="#1f5240";ctx.lineWidth=6;ctx.strokeRect(18,18,W-36,H-36);ctx.lineWidth=1.5;ctx.strokeRect(30,30,W-60,H-60);
-  ctx.fillStyle="#1f5240";ctx.fillRect(30,30,W-60,130);
-  ctx.fillStyle="#fff";ctx.textAlign="center";let fs=44;ctx.font="700 44px "+FD;while(ctx.measureText(schoolName()).width>W-120&&fs>26){fs-=2;ctx.font="700 "+fs+"px "+FD}ctx.fillText(schoolName(),W/2,95);
-  ctx.font="500 22px "+F;ctx.fillStyle="#d6e9df";ctx.fillText(cfg().addr||("السنة الدراسية "+yearLabel()),W/2,135);
-  ctx.fillStyle="#f3c64c";ctx.fillRect(W/2-170,175,340,58);ctx.fillStyle="#3b2b00";ctx.font="700 30px "+FD;ctx.fillText(o.kind,W/2,215);
-  ctx.textAlign="right";ctx.fillStyle="#18302a";ctx.font="600 24px "+F;if(o.no!=="—")ctx.fillText("رقم الوصل: "+(o.no||"-"),W-70,280);
-  ctx.textAlign="left";ctx.fillText("التاريخ: "+dtext(o.date),70,280);
+  ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);
+  ctx.strokeStyle=T.m;ctx.lineWidth=6;ctx.strokeRect(18,18,W-36,H-36);ctx.lineWidth=1.5;ctx.strokeRect(30,30,W-60,H-60);
+  ctx.fillStyle=T.m;ctx.fillRect(30,30,W-60,130);
+  ctx.fillStyle="#fff";ctx.textAlign="center";let fs=44;ctx.font="700 44px "+FD;while(ctx.measureText(schoolName()).width>W-120&&fs>24){fs-=2;ctx.font="700 "+fs+"px "+FD}ctx.fillText(schoolName(),W/2,95);
+  ctx.font="500 22px "+F;ctx.fillStyle=T.lt;ctx.fillText(cfg().addr||("السنة الدراسية "+yearLabel()),W/2,135);
+  if(lab){ctx.fillStyle=T.ab;ctx.fillRect(30,160,W-60,LB);ctx.fillStyle=T.m;ctx.font="700 26px "+FD;ctx.fillText(lab,W/2,160+36)}
+  const Y=LB;
+  ctx.fillStyle="#f3c64c";ctx.fillRect(W/2-170,175+Y,340,58);ctx.fillStyle="#3b2b00";ctx.font="700 30px "+FD;ctx.fillText(o.kind,W/2,215+Y);
+  ctx.textAlign="right";ctx.fillStyle="#18302a";ctx.font="600 24px "+F;if(o.no!=="—")ctx.fillText("رقم الوصل: "+(o.no||"-"),W-70,280+Y);
+  ctx.textAlign="left";ctx.fillText("التاريخ: "+dtext(o.date),70,280+Y);
   if(o.voided){ctx.save();ctx.translate(W/2,H/2);ctx.rotate(-0.35);ctx.strokeStyle="rgba(194,65,58,.85)";ctx.lineWidth=8;ctx.strokeRect(-260,-75,520,150);ctx.fillStyle="rgba(194,65,58,.85)";ctx.textAlign="center";ctx.font="800 96px "+FD;ctx.fillText("ملغى",0,32);ctx.restore()}
-  if(o.copy){ctx.save();ctx.translate(150,210);ctx.rotate(-0.12);ctx.strokeStyle="#c2413a";ctx.lineWidth=3;ctx.strokeRect(-95,-30,190,56);ctx.fillStyle="#c2413a";ctx.textAlign="center";ctx.font="700 22px "+F;ctx.fillText("نسخة مكررة",0,-2);ctx.font="500 15px "+F;ctx.fillText("أُعيد إصدارها "+dtext(today()),0,19);ctx.restore()}
-  let y=320;ctx.textAlign="right";
+  if(o.copy){ctx.save();ctx.translate(140,215+Y);ctx.rotate(-0.12);ctx.strokeStyle="#c2413a";ctx.lineWidth=3;ctx.strokeRect(-95,-30,190,56);ctx.fillStyle="#c2413a";ctx.textAlign="center";ctx.font="700 22px "+F;ctx.fillText("نسخة مكررة",0,-2);ctx.font="500 15px "+F;ctx.fillText("أُعيد إصدارها "+dtext(today()),0,19);ctx.restore()}
+  let y=320+Y;ctx.textAlign="right";
   if(o.lead){ctx.font="500 24px "+F;ctx.fillStyle="#5d6f68";ctx.fillText(o.lead+":",W-70,y+10);y+=34}
-  ctx.fillStyle="#e2f4ea";ctx.fillRect(60,y,W-120,96);ctx.strokeStyle="#1d8a55";ctx.lineWidth=2;ctx.strokeRect(60,y,W-120,96);
-  ctx.fillStyle="#1d8a55";ctx.font="700 40px "+F;ctx.fillText(fmt(o.amount)+" دينار عراقي",W-90,y+50);
+  ctx.fillStyle=T.ab;ctx.fillRect(60,y,W-120,96);ctx.strokeStyle=T.ac;ctx.lineWidth=2;ctx.strokeRect(60,y,W-120,96);
+  ctx.fillStyle=T.ac;ctx.font="700 40px "+F;ctx.fillText(fmt(o.amount)+" دينار عراقي",W-90,y+50);
   ctx.font="500 21px "+F;ctx.fillStyle="#18302a";const wl=wrapLines(ctx,wordsIQD(o.amount),W-200);ctx.fillText(wl[0]+(wl.length>1?" …":""),W-90,y+82);
   y+=126;
   rows.forEach(r=>{ctx.font="700 24px "+F;ctx.fillStyle="#5d6f68";ctx.fillText(r.k,W-70,y+28);ctx.font="500 26px "+F;ctx.fillStyle="#18302a";
-    r.v.forEach((l,i)=>ctx.fillText(l,W-330,y+28+i*40));y+=r.v.length*40+14;
+    r.v.forEach((l,i)=>ctx.fillText(l,VX,y+28+i*40));y+=r.v.length*40+14;
     ctx.strokeStyle="#d6dfda";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(70,y-4);ctx.lineTo(W-70,y-4);ctx.stroke()});
   y+=60;ctx.font="600 22px "+F;ctx.fillStyle="#18302a";
-  ctx.textAlign="center";ctx.fillText(o.sign[0],W-230,y);ctx.fillText(o.sign[1],230,y);
-  ctx.strokeStyle="#18302a";ctx.beginPath();ctx.moveTo(W-360,y+60);ctx.lineTo(W-100,y+60);ctx.moveTo(100,y+60);ctx.lineTo(360,y+60);ctx.stroke();
-  ctx.strokeStyle="#1f5240";ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(W/2,y+30,58,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
+  const sx=Math.min(230,W*0.25);ctx.textAlign="center";ctx.fillText(o.sign[0],W-sx,y);ctx.fillText(o.sign[1],sx,y);
+  ctx.strokeStyle="#18302a";ctx.beginPath();ctx.moveTo(W-sx-120,y+60);ctx.lineTo(W-sx+120,y+60);ctx.moveTo(sx-120,y+60);ctx.lineTo(sx+120,y+60);ctx.stroke();
+  ctx.strokeStyle=T.m;ctx.setLineDash([6,6]);ctx.beginPath();ctx.arc(W/2,y+30,52,0,Math.PI*2);ctx.stroke();ctx.setLineDash([]);
   ctx.fillStyle="#9db1a8";ctx.font="500 18px "+F;ctx.fillText("الختم",W/2,y+36);
-  const url=cv.toDataURL("image/png");
-  modal(o.kind+(o.no==="—"?"":" رقم "+(o.no||"")),`<img class="rcpt" src="${url}" alt="${esc(o.kind)}"><div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button><button class="btn ghost" id="pp">🖨️ اطبع</button>`+(o.wa?`<a class="btn wa" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(o.wa)}">💬 رسالة لولي الأمر</a>`:""),true);
-  $("#pp").onclick=()=>printImg(url);
+  return cv}
+async function receipt(o){
+  try{await document.fonts.ready}catch(e){}
+  for(let k=0;pendingBack&&k<40;k++)await new Promise(r=>setTimeout(r,50));
+  const two=o.no!=="—",who=o.who||"نسخة المستلم";
+  const cv=drawR(o,"c",two?who:"",1000);const url=cv.toDataURL("image/png");
+  let pc=[url];if(two){pc=[drawR(o,"c",who,730).toDataURL("image/png"),drawR(o,"s","نسخة المدرسة · للإدارة والتدقيق",730).toDataURL("image/png")]}
+  const view2=two?`<div class="rc2"><div><div class="t c">🟩 ${esc(who)}</div><img class="rcpt" src="${pc[0]}" alt="${esc(who)}"></div><div><div class="t s">🟦 نسخة المدرسة</div><img class="rcpt" src="${pc[1]}" alt="نسخة المدرسة"></div></div>
+    <div class="hint">زر «اطبع» يطبع الوصلين معًا في نصف ورقة A4 (كل ورقة تتسع لأربعة وصولات صغيرة): الأخضر يُسلَّم لصاحبه، والأزرق يبقى في المدرسة للإدارة والمدققين. زر الحفظ والإرسال يرسل نسخة صاحبه فقط.</div>`:`<img class="rcpt" src="${url}" alt="${esc(o.kind)}">`;
+  modal(o.kind+(o.no==="—"?"":" رقم "+(o.no||"")),view2+`<div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button><button class="btn ghost" id="pp">🖨️ اطبع${two?" الوصلين":""}</button>`+(o.wa?`<a class="btn wa" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(o.wa)}">💬 رسالة لولي الأمر</a>`:""),true);
+  $("#pp").onclick=()=>two?printQ(pc):printImg(url);
   const fn=(o.file||"وصل")+".png";
   $("#sv").onclick=()=>{cv.toBlob(b=>saveBlob(b,fn),"image/png")};
   $("#sh").onclick=()=>{cv.toBlob(b=>shareBlob(b,fn,o.kind+" رقم "+(o.no||"")),"image/png")}}
+function printQ(urls){document.documentElement.classList.add("printimg");let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}
+  d.className="q4";d.innerHTML='<div class="sh"><div class="q"></div><div class="q"></div><div class="q"></div><div class="q"></div></div>';const Q=d.querySelectorAll(".q");let n=0;
+  urls.forEach((u,i)=>{const im=new Image();im.onload=()=>{if(++n===urls.length)setTimeout(()=>window.print(),80)};im.src=u;Q[i].appendChild(im)})}
 function printRep(title){let h=document.getElementById("phd");if(h)h.remove();h=document.createElement("div");h.id="phd";h.className="phead";
   h.innerHTML=`<b>${esc(schoolName())}</b><span>${esc(title)} · طُبع في ${dtext(today())}</span>`;const a=$("#app");a.insertBefore(h,a.firstChild);
   document.documentElement.classList.add("printrep");setTimeout(()=>window.print(),80)}
 window.addEventListener("afterprint",()=>{document.documentElement.classList.remove("printrep","printimg");const h=document.getElementById("phd");if(h)h.remove()});
-function printImg(url){document.documentElement.classList.add("printimg");let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}d.innerHTML="";const i=new Image();i.onload=()=>{setTimeout(()=>{window.print()},60)};i.src=url;d.appendChild(i)}
+function printImg(url){document.documentElement.classList.add("printimg");let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}d.className="";d.innerHTML="";const i=new Image();i.onload=()=>{setTimeout(()=>{window.print()},60)};i.src=url;d.appendChild(i)}
 function saveBlob(b,fn){const u=URL.createObjectURL(b);const a=document.createElement("a");a.href=u;a.download=fn;document.body.appendChild(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),4000);toast("حُفظ في مجلد التنزيلات (Download)")}
 function shareBlob(b,fn,title){try{const f=new File([b],fn,{type:b.type});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],title}).catch(()=>{});return}}catch(e){}saveBlob(b,fn)}
 
