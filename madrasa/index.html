@@ -929,7 +929,9 @@ function salModal(m){const p=S.staff[view.id];const ps=salPaid(p,m);const left=M
     const x={id:uid(),a,m,d:$("#sD").value||today(),n:nextNo(),note:$("#sNo").value.trim()};const o=JSON.parse(JSON.stringify(p));o.pays=(o.pays||[]).concat(x);put("staff",view.id,o);close();salReceipt(x.id)}}
 function salReceipt(pid,sid,copy){const p=S.staff[sid||view.id];const x=(p.pays||[]).find(y=>y.id===pid);if(!x)return;const av=advOf(p,x.m),dd=dedOf(p,x.m);
   receipt({kind:"وصل استلام راتب",no:x.n,date:x.d,amount:x.a,voided:!!x.void,rows:[["الاسم",p.name],[(p.kind||"t")==="t"?"المادة":"العمل",p.job||"—"],["عن شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(av?[["سلفة مخصومة",fmt(av)+" د.ع"]]:[]).concat(dd?[["خصم",fmt(dd)+" د.ع"]]:[]).concat(av||dd?[["صافي الراتب",fmt(salNet(p,x.m))+" د.ع"]]:[]).concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why+" — "+dtext(x.void.d)]]:[]),
-    sign:["توقيع المستلم","توقيع المدير"],copy,file:"راتب-"+x.n+(copy?"-نسخة":""),lead:"استلمتُ من إدارة المدرسة مبلغ راتبي"})}
+    sign:["توقيع المستلم","توقيع المدير"],copy,file:"راتب-"+x.n+(copy?"-نسخة":""),lead:"استلمتُ من إدارة المدرسة مبلغ راتبي",
+    waTo:"للمستلم",waNo:x.void?"":"اكتب رقم هاتفه من «✎ تعديل» في صفحته حتى ترسل له الوصل بالواتساب.",
+    wa:x.void?"":waLink(p.phone,`السلام عليكم ${p.name} المحترم\nوصل استلام راتب رقم ${x.n} من ${schoolName()}\nعن شهر: ${mlabel(x.m)}\nالمبلغ المستلم: ${fmt(x.a)} د.ع\nبتاريخ: ${dtext(x.d)}\nشكرًا لجهودكم.`)})}
 function delSal(pid){voidAsk("إلغاء وصل راتب",v=>{const o=JSON.parse(JSON.stringify(S.staff[view.id]));const x=o.pays.find(y=>y.id===pid);if(x)x.void=v;put("staff",view.id,o);voidShow(()=>salReceipt(pid))})}
 function adjModal(t,eid){const p=S.staff[view.id];const ms=yearMonths();const cur=today().slice(0,7);const E=eid?(p.adj||[]).find(y=>y.id===eid):null;if(E)t=E.t;const def=E?E.m:ms.includes(cur)?cur:ms[0];
   modal((E?"تعديل ":"")+(t==="adv"?"سلفة لـ ":"خصم من راتب ")+p.name,(E?`<div class="note">غيّر ما تريد ثم اضغط «احفظ التعديل». إذا كانت السلفة غلطًا من الأساس استعمل زر «🗑️ امسح السلفة».</div>`:"")+(t==="adv"?`<div class="hint">السلفة تُصرف الآن من القاصة العامة، وتُخصم تلقائيًا من راتب الشهر الذي تختاره.</div>`:`<div class="hint">الخصم لا يُخرج مالًا من القاصة، بل يُنقص راتب الشهر الذي تختاره.</div>`)+
@@ -942,7 +944,8 @@ function adjModal(t,eid){const p=S.staff[view.id];const ms=yearMonths();const cu
     const o=JSON.parse(JSON.stringify(p));o.adj=(o.adj||[]).concat(x);put("staff",view.id,o);close();if(t==="adv")advReceipt(x.id);else toast("سُجّل الخصم")}}
 function advReceipt(xid,sid,copy){const p=S.staff[sid||view.id];const x=(p.adj||[]).find(y=>y.id===xid);if(!x)return;
   receipt({kind:"وصل استلام سلفة",no:x.n,date:x.d,amount:x.a,voided:!!x.void,copy,rows:[["الاسم",p.name],["تُخصم من راتب شهر",mlabel(x.m)],["الراتب الشهري",fmt(p.sal||0)+" د.ع"]].concat(x.note?[["ملاحظة",x.note]]:[]).concat(x.ed?[["عُدّلت في",dtext(x.ed)]]:[]).concat(x.void?[["سبب الإلغاء",x.void.why]]:[]),
-    sign:["توقيع المستلم","توقيع المدير"],file:"سلفة-"+x.n,lead:"استلمتُ من القاصة العامة للمدرسة سلفة مبلغها"})}
+    sign:["توقيع المستلم","توقيع المدير"],file:"سلفة-"+x.n,waTo:"للمستلم",waNo:x.void?"":"اكتب رقم هاتفه من «✎ تعديل» في صفحته حتى ترسل له الوصل بالواتساب.",
+    wa:x.void?"":waLink(p.phone,`السلام عليكم ${p.name} المحترم\nوصل استلام سلفة رقم ${x.n} من ${schoolName()}\nالمبلغ: ${fmt(x.a)} د.ع\nتُخصم من راتب شهر: ${mlabel(x.m)}\nبتاريخ: ${dtext(x.d)}`),lead:"استلمتُ من القاصة العامة للمدرسة سلفة مبلغها"})}
 function delAdj(xid){const p=S.staff[view.id];const x=(p.adj||[]).find(y=>y.id===xid);if(!x)return;
   if(x.t==="ded")return ask("مسح هذا الخصم؟ يرجع راتب الشهر كما كان.","امسح الخصم",()=>{const o=JSON.parse(JSON.stringify(p));o.adj=o.adj.filter(y=>y.id!==xid);put("staff",view.id,o)});
   voidAsk("مسح سلفة "+fmt(x.a)+" د.ع — "+p.name,v=>{const o=JSON.parse(JSON.stringify(p));o.adj.find(y=>y.id===xid).void=v;put("staff",view.id,o);voidShow(()=>advReceipt(xid))})}
@@ -1004,11 +1007,21 @@ async function receipt(o){
   let pc=[url];if(two){pc=[drawR(o,"c",who,730).toDataURL("image/png"),drawR(o,"s","نسخة المدرسة · للإدارة والتدقيق",730).toDataURL("image/png")]}
   const view2=two?`<div class="rc2"><div><div class="t c">🟩 ${esc(who)}</div><img class="rcpt" src="${pc[0]}" alt="${esc(who)}"></div><div><div class="t s">🟦 نسخة المدرسة</div><img class="rcpt" src="${pc[1]}" alt="نسخة المدرسة"></div></div>
     <div class="hint">زر «اطبع» يطبع الوصلين معًا في نصف ورقة A4 (كل ورقة تتسع لأربعة وصولات صغيرة): الأخضر يُسلَّم لصاحبه، والأزرق يبقى في المدرسة للإدارة والمدققين. زر الحفظ والإرسال يرسل نسخة صاحبه فقط.</div>`:`<img class="rcpt" src="${url}" alt="${esc(o.kind)}">`;
-  const vn=VN&&o.voided;VN=false;modal(o.kind+(o.no==="—"?"":" رقم "+(o.no||"")),(vn?`<div class="note" style="background:var(--badbg);color:var(--bad);font-weight:700;margin-bottom:8px">اطبع الوصل الملغى: الأزرق منه يُسلَّم للمدير مع ورقة تسليم اليوم حتى يبقى تسلسل الأرقام كاملًا.</div>`:"")+view2+`<div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button><button class="btn ghost" id="pp">🖨️ اطبع${two?" الوصلين":""}</button>`+(o.wa?`<a class="btn wa" style="text-decoration:none" target="_blank" rel="noopener" href="${esc(o.wa)}">💬 رسالة لولي الأمر</a>`:""),true);
+  const vn=VN&&o.voided;VN=false;modal(o.kind+(o.no==="—"?"":" رقم "+(o.no||"")),(vn?`<div class="note" style="background:var(--badbg);color:var(--bad);font-weight:700;margin-bottom:8px">اطبع الوصل الملغى: الأزرق منه يُسلَّم للمدير مع ورقة تسليم اليوم حتى يبقى تسلسل الأرقام كاملًا.</div>`:"")+view2+`<div class="hint">كل وصل يبقى محفوظًا داخل التطبيق في خانة «🗂️ الوصولات». زر الحفظ ينزّله صورة في مجلد التنزيلات (Download) بالموبايل، وزر الإرسال يفتح الواتساب مباشرة.</div>`,`<button class="btn gold" id="sv">💾 احفظ الوصل</button><button class="btn" id="sh">📤 أرسل الوصل</button><button class="btn ghost" id="pp">🖨️ اطبع${two?" الوصلين":""}</button>`+(o.wa?`<button class="btn wa" id="wa">💬 أرسل الوصل ${esc(o.waTo||"لولي الأمر")} بالواتساب</button>`:""),true);
+  if(!o.wa&&o.waNo){const h=document.createElement("div");h.className="note";h.style.marginTop="8px";h.textContent="💬 "+o.waNo;$(".mdl .bd").appendChild(h)}
+  if(o.wa)$("#wa").onclick=()=>waSend(cv,(o.file||"وصل")+".png",o.wa);
   $("#pp").onclick=()=>two?printQ(pc):printImg(url);
   const fn=(o.file||"وصل")+".png";
   $("#sv").onclick=()=>{cv.toBlob(b=>saveBlob(b,fn),"image/png")};
   $("#sh").onclick=()=>{cv.toBlob(b=>shareBlob(b,fn,o.kind+" رقم "+(o.no||"")),"image/png")}}
+/* send the customer copy to WhatsApp: phone → share sheet with the image; computer → copy image + open the chat (paste with Ctrl+V) */
+function waSend(cv,fn,link){const txt=decodeURIComponent((link.split("?text=")[1]||""));
+  const mob=/Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+  const bp=new Promise(res=>cv.toBlob(res,"image/png"));
+  if(mob){bp.then(b=>{try{const f=new File([b],fn,{type:"image/png"});if(navigator.canShare&&navigator.canShare({files:[f]})){navigator.share({files:[f],text:txt}).catch(()=>{});return}}catch(e){}saveBlob(b,fn);window.open(link,"_blank")});return}
+  let cp;try{cp=navigator.clipboard.write([new ClipboardItem({"image/png":bp})])}catch(e){cp=Promise.reject(e)}
+  cp.then(()=>{window.open(link,"_blank");modal("الوصل جاهز للإرسال ✅",`<div style="font-size:17px;line-height:1.9">فتحنا محادثة الواتساب ونسخنا صورة الوصل (نسخة المستلم فقط).<br><b>1)</b> في المحادثة اضغط <b dir="ltr">Ctrl + V</b> (أو كلك يمين ← لصق).<br><b>2)</b> اضغط <b>إرسال</b>.</div>`,"")})
+   .catch(()=>{bp.then(b=>{saveBlob(b,fn);window.open(link,"_blank");modal("أرسل الوصل بالواتساب",`<div style="font-size:17px;line-height:1.9">نزّلنا صورة الوصل في مجلد التنزيلات (Download) وفتحنا المحادثة.<br>في الواتساب اضغط 📎 ← صورة ← اختر الملف <b>${esc(fn)}</b> ← إرسال.</div>`,"")})})}
 function printQ(urls){document.documentElement.classList.add("printimg");let d=document.getElementById("pr");if(!d){d=document.createElement("div");d.id="pr";document.body.appendChild(d)}
   d.className="q4";d.innerHTML='<div class="sh"><div class="q"></div><div class="q"></div><div class="q"></div><div class="q"></div></div>';const Q=d.querySelectorAll(".q");let n=0;
   urls.forEach((u,i)=>{const im=new Image();im.onload=()=>{if(++n===urls.length)setTimeout(()=>window.print(),80)};im.src=u;Q[i].appendChild(im)})}
