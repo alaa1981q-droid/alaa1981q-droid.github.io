@@ -423,7 +423,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="29";
+const APP_VER="30";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -549,7 +549,7 @@ function infoCard(st,c,cid,si,link){const d=due(st,c),pd=paid(st),r=d-pd,l=isLat
     ${st.note?`<div class="hint" style="margin-top:6px">📝 ${esc(st.note)}</div>`:""}
     ${(()=>{const sb=sibs(st);return sb.length?`<div class="note" style="margin-top:8px;background:var(--goodbg);color:var(--good)">👨‍👩‍👦 إخوته في المدرسة: ${sb.map(x=>`<button class="btn ghost sm" data-act="lateOpen" data-c="${x.cid}" data-i="${x.si}">${esc(x.st.name)} · ${clsName(x.cid)}</button>`).join(" ")} ${link?"":`<button class="btn sm" data-act="famK">📋 كشف حساب العائلة</button>`}</div>`:""})()}
     ${r>0&&waNum(st.phone)?`<a class="btn wa" style="display:block;text-align:center;margin-top:8px;text-decoration:none" target="_blank" rel="noopener" href="${esc(waLink(st.phone,remindTxt(st,c,cid)))}">💬 ذكّر ولي الأمر بالواتساب (الباقي ${fmt(r)} د.ع)</a>`:""}
-    ${st.prev?`<div class="note" style="margin-top:8px">القسط الكلي يشمل دَينًا من السنة الماضية: ${money(st.prev)}</div>`:""}
+    ${st.prev?`<div class="note" style="margin-top:8px">📌 القسط = قسط ${clsName(cid)} ${money(dueQ(st,c)-Number(st.prev))} ＋ مطلوب من العام الماضي ${money(st.prev)} = <b>${money(dueQ(st,c))}</b></div>`:""}
     ${st.res?`<div style="margin-top:8px">نتيجة آخر السنة: ${resBadge(st,cid)}</div>`:""}
     <div class="ibar"><i style="width:${pc}%"></i></div><div class="isub" style="text-align:center">سدّد ${Math.round(pc)}٪ من القسط</div>
     ${link?`<button class="btn" style="width:100%;margin-top:10px" data-act="lateOpen" data-c="${cid}" data-i="${si}">افتح صفحة الطالب ودفعاته ←</button>`:""}
@@ -1050,7 +1050,7 @@ function lockScreen(){const p=pinGet();if(!p)return;
 
 function kashf(){const c=getCls(view.id),s=c.students[view.i];const ps=live(s.pays).slice().sort((a,b)=>a.d<b.d?-1:a.d>b.d?1:0);const d=due(s,c),p=paid(s);
   const rows=[["اسم الطالب",s.name],["الصف والشعبة",clsName(view.id)],["المبلغ الكلي",fmt(d)+" د.ع"]];
-  if(s.prev)rows.push(["منه دَين السنة الماضية",fmt(s.prev)+" د.ع"]);
+  if(s.prev)rows.push(["منه مطلوب من العام الماضي",fmt(s.prev)+" د.ع"]);
   if(dueB(s))rows.push(["منه أجور الخط",fmt(dueB(s))+" د.ع"]);(s.extra||[]).forEach(x=>rows.push(["منه "+x.k,fmt(x.a)+" د.ع"]));
   ps.forEach((x,i)=>rows.push(["الدفعة "+(i+1),fmt(x.a)+" د.ع — "+dtext(x.d)+" — وصل رقم "+(x.n||"-")+(x.k&&x.k!=="q"?" — "+KN[x.k]:"")]));
   if(!ps.length)rows.push(["الدفعات","لم يسدّد أي دفعة بعد"]);
