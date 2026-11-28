@@ -423,7 +423,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="25";
+const APP_VER="29";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
