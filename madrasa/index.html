@@ -423,7 +423,7 @@ const getCls=id=>S.classes[id]||{fee:0,students:[]};
 const live=a=>(a||[]).filter(x=>!x.void);
 const liveExp=()=>Object.entries(S.expenses).filter(([,e])=>!e.void);
 const liveInc=()=>Object.entries(S.income||{}).filter(([,e])=>!e.void);
-const APP_VER="30";
+const APP_VER="31";
 const STANDALONE=typeof window.claude==="undefined";
 const KN={q:"القسط الدراسي",bus:"أجور الخط (النقل)",x:"رسوم أخرى"};const KS={q:"القسط",bus:"أجور الخط",x:"الرسوم"};
 const dueQ=(st,c)=>(st.fee!=null&&st.fee!==""?Number(st.fee):Number(c.fee||0))+Number(st.prev||0);
@@ -856,8 +856,10 @@ const fld=(id,label,val,extra)=>`<div class="fld"><label for="${id}">${label}</l
 const dateFld=(id,val)=>`<div class="fld"><label for="${id}">تاريخ الدفع</label><input id="${id}" type="date" value="${esc(val||today())}"></div>`;
 
 function feeModal(){const c=getCls(view.id);const g=view.id.slice(0,2);
-  modal("قسط "+("الصف "+GR[+view.id[1]-1]),amtField("fA","القسط السنوي لكل طالب",c.fee,"يُطبَّق على الشعبتين أ و ب، ويظهر قبال كل طالب.")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">احفظ</button>`);
-  $("#ok").onclick=()=>{const v=pnum($("#fA").value);if(!v){$("#er").textContent="اكتب مبلغ القسط";return}
+  modal("قسط "+("الصف "+GR[+view.id[1]-1]),amtField("fA","القسط السنوي لكل طالب",c.fee,"يُطبَّق على الشعبتين أ و ب، ويظهر قبال كل طالب.")+`<div class="err" id="er"></div>`,`<button class="btn" id="ok">احفظ</button>`+(Number(c.fee)?`<button class="btn red" id="fDel">🗑️ احذف القسط</button>`:""));
+  const setFee=v=>["a","b"].forEach(s=>{const id=g+s;const cc=JSON.parse(JSON.stringify(getCls(id)));cc.fee=v;cc.students=cc.students||[];put("classes",id,cc)});
+  if($("#fDel"))$("#fDel").onclick=()=>{close();afterPB(()=>ask(`حذف قسط ${"الصف "+GR[+view.id[1]-1]} (${fmt(c.fee)} د.ع) من الشعبتين أ و ب؟ يرجع «لم يُحدَّد القسط». الطلاب الذين لهم قسط خاص (مخفَّض) يبقى قسطهم كما هو.`,"احذف القسط",()=>{setFee(0);toast("حُذف القسط")}))};
+  $("#ok").onclick=()=>{const v=pnum($("#fA").value);if(!v){$("#er").textContent="اكتب مبلغ القسط، أو اضغط «🗑️ احذف القسط» لحذفه";return}
     ["a","b"].forEach(s=>{const id=g+s;const cc=JSON.parse(JSON.stringify(getCls(id)));cc.fee=v;cc.students=cc.students||[];put("classes",id,cc)});close();toast("حُفظ القسط")}}
 function stuModal(i){const c=getCls(view.id);const s=i!=null?c.students[i]:{};const edit=i!=null;
   modal(edit?"تعديل بيانات الطالب":"طالب جديد في "+clsName(view.id),
