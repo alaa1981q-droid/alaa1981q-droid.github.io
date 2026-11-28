@@ -276,8 +276,10 @@ function reindex(){
 }
 function upsert(key,id,data){var o=Object.assign({},data,{id:id}),arr=S[key],i=arr.findIndex(function(x){return x.id===id});if(i>-1)arr[i]=o;else arr.push(o);reindex();}
 function dropLocal(key,id){S[key]=S[key].filter(function(x){return x.id!==id});reindex()}
-var AN=function(t){return String(t==null?'':t).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/[٠-٩]/g,function(d){return AR.indexOf(d)}).replace(/\s+/g,' ').trim()};
-function custMatch(c,q){if(!q)return true;q=AN(q);var hay=AN([c.name,c.phone,c.address].join(' '));S.sales.forEach(function(x){if(x.customerId===c.id)hay+=' '+AN(x.item)});return q.split(' ').every(function(w){return hay.indexOf(w)>-1})}
+var AN=function(t){return String(t==null?'':t).toLowerCase().replace(/[\u064B-\u0652\u0640]/g,'').replace(/[أإآ]/g,'ا').replace(/ة/g,'ه').replace(/ى/g,'ي').replace(/ئ/g,'ي').replace(/ؤ/g,'و').replace(/[٠-٩]/g,function(d){return AR.indexOf(d)}).replace(/\s+/g,' ').trim()};
+function phN(t){var d=String(t||'').replace(/[^0-9]/g,'');if(d.indexOf('00964')===0)d=d.slice(5);else if(d.indexOf('964')===0)d=d.slice(3);return d.replace(/^0+/,'')}
+function custMatch(c,q){if(!q)return true;q=AN(q);if(!q)return true;var hay=AN([c.name,c.phone,c.address].join(' '));S.sales.forEach(function(x){if(x.customerId===c.id)hay+=' '+AN([x.item,x.gName,x.gPhone].join(' '))});var flat=hay.replace(/ /g,'');var ph=phN(c.phone);
+  return q.split(' ').every(function(w){if(hay.indexOf(w)>-1||flat.indexOf(w)>-1)return true;var wd=phN(w);return wd.length>=3&&/^[0-9]+$/.test(w)&&ph.indexOf(wd)>-1})||flat.indexOf(q.replace(/ /g,''))>-1}
 function custCard(c){
   var st=custStats(c.id);
   var tag=st.count===0?'<span class="tag done">بلا مبيعات</span>':st.remaining<=0.5?'<span class="tag done">مسدَّد</span>':st.shortfall>0.5?'<span class="tag late">متأخر</span>':'<span class="tag ok">منتظم</span>';
