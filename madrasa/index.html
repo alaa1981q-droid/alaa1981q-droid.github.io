@@ -896,7 +896,7 @@ function extraModal(){modal("رسم جديد على الطالب",fld("xK","اس
   $("#ok").onclick=()=>{const k=$("#xK").value.trim(),a=pnum($("#xV").value);if(!k||!a){$("#er").textContent="اكتب اسم الرسم والمبلغ";return}
     const cc=JSON.parse(JSON.stringify(getCls(view.id)));const st=cc.students[view.i];st.extra=(st.extra||[]).concat({id:uid(),k,a});put("classes",view.id,cc);close();toast("أُضيف الرسم")}}
 function famKashf(){const c=getCls(view.id),s=c.students[view.i];const fam=[{st:s,cid:view.id}].concat(sibs(s));let T=0,P=0;const rows=[];
-  fam.forEach(x=>{const cc=getCls(x.cid);const d=due(x.st,cc),p=paid(x.st);T+=d;P+=p;rows.push([x.st.name+" — "+clsName(x.cid),"المطلوب "+fmt(d)+" · دفع "+fmt(p)+" · الباقي "+fmt(Math.max(d-p,0))])});
+  fam.forEach(x=>{const cc=getCls(x.cid);const d=due(x.st,cc),p=paid(x.st);T+=d;P+=p;rows.push([x.st.name+" — "+clsName(x.cid),"المطلوب: "+fmt(d)+" د.ع\nالمدفوع: "+fmt(p)+" د.ع\nالباقي: "+fmt(Math.max(d-p,0))+" د.ع"])});
   rows.push(["ولي الأمر",s.parent||"—"],["المطلوب من العائلة",fmt(T)+" د.ع"],["مجموع المدفوع",fmt(P)+" د.ع"],["الباقي على العائلة",fmt(Math.max(T-P,0))+" د.ع"]);
   receipt({kind:"كشف حساب العائلة",no:"—",date:today(),amount:P,rows,lead:"مجموع ما دفعته العائلة حتى اليوم",sign:["توقيع ولي الأمر","توقيع المحاسب"],file:"كشف-عائلة-"+(s.parent||s.name)})}
 
@@ -946,15 +946,14 @@ function expReceipt(id,copy){const e=S.expenses[id];
   receipt({kind:"سند صرف",no:e.n,date:e.d,amount:e.a,voided:!!e.void,rows:[["المستلم",e.who],["الغرض",e.what],["يُخصم من","القاصة العامة للمدرسة"]].concat(e.void?[["سبب الإلغاء",e.void.why]]:[]),sign:["توقيع المستلم","توقيع المدير"],copy,file:"صرف-"+e.n+(copy?"-نسخة":""),lead:"صُرف من القاصة العامة للمدرسة مبلغ"})}
 
 /* ---------- receipt image ---------- */
-function wrapLines(ctx,text,max){const w=String(text).split(/\s+/);const L=[];let cur="";w.forEach(x=>{const t=cur?cur+" "+x:x;if(ctx.measureText(t).width>max&&cur){L.push(cur);cur=x}else cur=t});if(cur)L.push(cur);return L.length?L:[""]}
+function wrapLines(ctx,text,max){const P=String(text).split("\n");if(P.length>1)return P.flatMap(x=>wrapLines(ctx,x,max));const w=P[0].split(/\s+/);const L=[];let cur="";w.forEach(x=>{const t=cur?cur+" "+x:x;if(ctx.measureText(t).width>max&&cur){L.push(cur);cur=x}else cur=t});if(cur)L.push(cur);return L.length?L:[""]}
 const RTH={c:{m:"#1f5240",bg:"#fffdf7",lt:"#d6e9df",ab:"#e2f4ea",ac:"#1d8a55"},s:{m:"#1d3f7a",bg:"#f5f8ff",lt:"#d5e0f5",ab:"#e3ebfb",ac:"#2456a8"}};
 function drawR(o,tk,lab,W){
   const T=RTH[tk],F="'IBM Plex Sans Arabic',Tahoma,sans-serif",FD="'Cairo','IBM Plex Sans Arabic',sans-serif";
   const cv=document.createElement("canvas");const ctx=cv.getContext("2d");
   const VX=W-330,VW=W-440,LB=lab?52:0;
-  ctx.font="500 26px "+F;
-  const rows=o.rows.map(([k,v])=>({k,v:wrapLines(ctx,v,VW)}));
-  const H=400+LB+rows.reduce((s,r)=>s+r.v.length*40+14,0)+260;
+  const rows=o.rows.map(([k,v])=>{ctx.font="700 24px "+F;const top=ctx.measureText(k).width>W-70-VX-18;ctx.font="500 26px "+F;return{k,top,v:wrapLines(ctx,v,top?W-180:VW)}});
+  const H=400+LB+rows.reduce((s,r)=>s+(r.v.length+(r.top?1:0))*40+14,0)+260;
   cv.width=W;cv.height=H;ctx.direction="rtl";
   ctx.fillStyle=T.bg;ctx.fillRect(0,0,W,H);
   ctx.strokeStyle=T.m;ctx.lineWidth=6;ctx.strokeRect(18,18,W-36,H-36);ctx.lineWidth=1.5;ctx.strokeRect(30,30,W-60,H-60);
@@ -975,7 +974,7 @@ function drawR(o,tk,lab,W){
   ctx.font="500 21px "+F;ctx.fillStyle="#18302a";const wl=wrapLines(ctx,wordsIQD(o.amount),W-200);ctx.fillText(wl[0]+(wl.length>1?" …":""),W-90,y+82);
   y+=126;
   rows.forEach(r=>{ctx.font="700 24px "+F;ctx.fillStyle="#5d6f68";ctx.fillText(r.k,W-70,y+28);ctx.font="500 26px "+F;ctx.fillStyle="#18302a";
-    r.v.forEach((l,i)=>ctx.fillText(l,VX,y+28+i*40));y+=r.v.length*40+14;
+    if(r.top){y+=40;r.v.forEach((l,i)=>ctx.fillText(l,W-100,y+28+i*40))}else r.v.forEach((l,i)=>ctx.fillText(l,VX,y+28+i*40));y+=r.v.length*40+14;
     ctx.strokeStyle="#d6dfda";ctx.lineWidth=1;ctx.beginPath();ctx.moveTo(70,y-4);ctx.lineTo(W-70,y-4);ctx.stroke()});
   y+=60;ctx.font="600 22px "+F;ctx.fillStyle="#18302a";
   const sx=Math.min(230,W*0.25);ctx.textAlign="center";ctx.fillText(o.sign[0],W-sx,y);ctx.fillText(o.sign[1],sx,y);
