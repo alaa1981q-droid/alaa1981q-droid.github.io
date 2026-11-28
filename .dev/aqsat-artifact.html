@@ -175,6 +175,7 @@ a.btn{text-decoration:none;display:inline-block}
 .guar{margin:6px 0;padding:7px 10px;border-radius:10px;background:#eef4fd;color:#1f4f8f;font-size:13.5px;box-shadow:0 2px 0 #bcd3ef}.guar a{color:#1f4f8f}
 .gbox{margin:10px 0;background:#eef4fd;border-radius:12px;padding:8px 10px;box-shadow:0 3px 0 #bcd3ef}.gbox summary{cursor:pointer;font-weight:700;color:#1f4f8f}
 .dgrid{display:grid;grid-template-columns:repeat(auto-fill,minmax(110px,1fr));gap:8px}.dthumb{cursor:pointer;border-radius:10px;overflow:hidden;background:#f1f4f7;box-shadow:0 3px 0 #dfe6e2}.dthumb img{width:100%;height:84px;object-fit:cover;display:block}.dthumb span{display:block;font-size:12px;padding:4px 6px;text-align:center}
+.ver{text-align:center;margin:18px auto 6px;font-size:13.5px;font-weight:700;color:#3a4552;background:#fff;border-radius:99px;padding:6px 14px;width:max-content;max-width:100%;box-shadow:0 3px 0 #dfe6e2,0 4px 10px #0000000d}
 .warn{background:var(--amb2);color:#7a4d06;border-radius:12px;padding:10px 12px;margin:10px 0;font-size:14px}
 /* ---- 3D colourful theme ---- */
 body{background:linear-gradient(180deg,#eef5f1 0,#f5f7f9 260px)}
@@ -250,6 +251,7 @@ var timeNow=function(){var d=new Date();return pad(d.getHours())+':'+pad(d.getMi
 var fdate=function(iso){if(!iso)return '';var p=iso.split('-');return Number(p[2])+' / '+Number(p[1])+' / '+p[0]};
 
 var S={stock:[],docs:null,docsFor:'',cashTab:'exp',cmonth:todayISO().slice(0,7),expenses:[],income:[],staff:[],salaries:[],hist:[],customers:[],sales:[],payments:[],shop:{},ready:{c:false,s:false,p:false,h:false},admin:false,canWrite:true,view:'home',cid:null,q:'',mode:'month',day:todayISO(),wk:'',month:todayISO().slice(0,7),year:new Date().getFullYear(),timeout:false,err:''};
+var APP_VER='23',APP_DATE='2026-11-28';
 var cmap={},smap={};
 var PCSS="@page{size:A4;margin:10mm}.pa{font-family:'Tajawal',Tahoma,sans-serif;color:#111;direction:rtl;font-size:13px;line-height:1.45}.pa *{-webkit-print-color-adjust:exact;print-color-adjust:exact}.pa .rc{border:2px solid var(--k);border-radius:10px;padding:7mm 8mm;height:128mm;overflow:hidden}.pa .rh{display:flex;justify-content:space-between;align-items:flex-start;gap:6mm;border-bottom:2px solid var(--k);padding-bottom:3mm}.pa .shop{font-size:20px;font-weight:700}.pa .cp{background:var(--k);color:#fff;padding:1.8mm 4mm;border-radius:6px;font-weight:700;font-size:14px;white-space:nowrap}.pa .tt{text-align:center;font-size:18px;font-weight:700;margin:3mm 0 2.5mm}.pa table{width:100%;border-collapse:collapse;margin:1mm 0}.pa td,.pa th{border:1px solid #9a9a9a;padding:1.5mm 2.4mm;text-align:right;vertical-align:top}.pa th{background:#eef2ee;font-weight:700}.pa tr{break-inside:avoid}.pa .big td,.pa .big th{font-size:15.5px;font-weight:700}.pa .sig{display:flex;justify-content:space-between;margin-top:8mm;font-size:13px}.pa .sig span{border-top:1px solid #333;padding-top:1.5mm;width:38%;text-align:center}.pa .cut{text-align:center;color:#666;font-size:12px;height:10mm;line-height:10mm;border-top:1.5px dashed #777;margin-top:3mm}.pa .ft{text-align:center;font-size:12px;color:#444;margin-top:2.5mm}.pa h1{font-size:20px;margin:0}.pa h2{font-size:15px;margin:5mm 0 1.5mm;border-right:4px solid #1f7a4d;padding-right:2mm}.pa .meta{color:#444;font-size:12.5px}.pa .tot td{font-weight:700;background:#f6f6f6}.pa ol.cl{margin:1mm 0;padding-right:6mm;font-size:12.5px}.pa ol.cl li{margin:.8mm 0}.pa .sm3 td,.pa .sm3 th{padding:1mm 1.5mm;font-size:11.5px}.pa .sig3 span{width:30%}.pa .sig small{color:#555}.pa .none{color:#666;font-size:12.5px;padding:1mm 0}";
 var app=$('#app'),modal=$('#modal');
@@ -414,6 +416,7 @@ function homeV(){
   h+='<div class="row" style="margin:12px 0 4px"><input type="search" id="q" placeholder="ابحث عن الزبون بالاسم أو الرقم أو المنطقة" value="'+esc(S.q)+'" class="grow">'+(S.canWrite?'<button class="btn" data-act="newcust">زبون جديد</button>':'')+'</div>';
   h+='<div id="dashW"'+(S.q.trim()?' style="display:none"':'')+'><div class="hgrid"><button class="btn cbig" data-act="go" data-v="customers">👥 الزبائن<small>'+S.customers.length+' زبون · اضغط لعرض القائمة</small></button>'+lateBtn()+dueBtn()+(S.admin?'<button class="btn sbig" data-act="go" data-v="stock">📦 المخزن<small>'+(function(){var n=0,z=0;(S.stock||[]).forEach(function(x){n+=(+x.qty||0);if((+x.qty||0)<=0)z++});return n+' قطعة'+(z?' · '+z+' نفدت':'')})()+'</small></button>':'')+'</div>'+(S.admin?'<button class="btn block kbig" data-act="go" data-v="cash">💰 القاصة<small>الرصيد الآن '+money(cashTotals().bal)+' · المصاريف والرواتب والوارد</small></button>'+dash():'')+'</div>';
   h+='<div id="list">'+(S.q.trim()?custRows():'')+'</div>';
+  h+='<div class="ver">🏷️ الإصدار '+APP_VER+' · آخر تحديث '+fdate(APP_DATE)+'</div>';
   return h;
 }
 function dbox(title,m,c,d,st,sub){
@@ -859,6 +862,7 @@ function repV(){
 }
 function setV(){
   var h='<div class="card"><h3>بيانات المحل (تظهر على الوصل)</h3><label>اسم المحل</label><input type="text" id="sn" value="'+esc(S.shop.name||'')+'"><label>رقم هاتف المحل</label><input type="tel" id="sp" value="'+esc(S.shop.phone||'')+'"><label>سطر أسفل الوصل</label><input type="text" id="sf" value="'+esc(S.shop.footer||'')+'" placeholder="مثال: شكراً لتعاملكم معنا"><div style="margin-top:12px"><button class="btn" data-act="saveshop">حفظ</button></div></div>';
+  h+='<div class="card" style="text-align:center"><h3>🏷️ الإصدار '+APP_VER+'</h3><div class="mut">آخر تحديث: '+fdate(APP_DATE)+'</div></div>';
   h+='<div class="card"><h3>📊 نسخة احتياط Excel</h3><p class="mut" style="margin:6px 0">ملف Excel واحد بيه كل البيانات: الزبائن، المبيعات، الدفعات، المصاريف، الوارد، الموظفون، الرواتب، المخزن. احتفظ بيه بالحاسبة كنسخة احتياط.</p><button class="btn" style="background:linear-gradient(180deg,#34b072,#1f7a4d)" data-act="xlsx">📊 تنزيل نسخة Excel</button></div>';
   h+='<div class="card"><h3>إضافة موظف</h3><p class="mut" style="margin:6px 0">من زر المشاركة (Share) في صفحة هذا التطبيق على claude.ai، أضف الموظف بإيميله بصلاحية «مساهم» (Contributor). المساهم يضيف الزبائن والمبيعات والدفعات فقط، ولا يعدّل ولا يحذف بعد الحفظ، ولا يفتح التقارير. من تعطيه صلاحية «محرر» (Editor) يصبح مديراً.</p></div>';
   return h;
